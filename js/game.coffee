@@ -83,11 +83,16 @@ class OverworldControls
 class @GamePlay
 	running:false
 	handle:null
+
 	constructor:(@canvas,@interface)->
 		@overworldResponse = new OverworldControls null,@interface
-	getSave:(cb)=>cb(@interface.currentSave())
+		@interface.currentSave()
+
+	getSave:(cb)=>cb @interface.currentSave()
+
 	loadedMap:null
 	tileset:null
+
 	play:=>
 		if @loadedMap == null
 			@interface.loadMap 1,(map,tileset)=>
@@ -99,26 +104,38 @@ class @GamePlay
 			@running=true
 			@requestFrame @frame
 		@overworldResponse.enable()
+
 	frame:=>
 		#do things per-frame here. yup.
-		[width,height]=[32,32]
-		[boundsW,boundsH]=[@canvas.width-width,@canvas.height-height]
-		[xpos,ypos] = [(Number.random boundsW),(Number.random boundsH)]
-		context = @canvas.getContext "2d"
-		context.clearRect 0,0, @canvas.width, @canvas.height
-		frame = 0
-		for layer in @loadedMap.layers
-			[mapx,mapy]=[0,0]
-			for tile in layer
-				if tile>=0
-					[tilex,tiley,tileWidth,tileHeight] = @getTileSlice tile,frame
-					[blitX,blitY] = [mapx*tileWidth,mapy*tileHeight]
-					context.drawImage @tileset,tilex,tiley,tileWidth,tileHeight,blitX,blitY,tileWidth,tileHeight
-				if ++mapx>=@loadedMap.width
-					mapy+=1
-					mapx=0
+		@getSave (save)=>
+			[playerSpriteWidth,playerSpriteHeight] = [16,32]
+			[playerPositionX,playerPositionY] = [save.position.x(),save.position.y()]
+			[width,height]=[16,16]
+			[boundsW,boundsH]=[@canvas.width-width,@canvas.height-height]
+			[xpos,ypos] = [(Number.random boundsW),(Number.random boundsH)]
+			[cameraAdjustX,cameraAdjustY] = [@canvas.width/2,@canvas.height/2]
+			cameraAdjustX -= playerPositionX * width#adjust for the player's x position
+			cameraAdjustY -= playerPositionY * height#adjust for the player's y position
+			cameraAdjustX -= Math.abs (playerSpriteWidth - width) / 2
+			context = @canvas.getContext "2d"
+			context.clearRect 0,0, @canvas.width, @canvas.height
+			context.setTransform 1,0,0,1,cameraAdjustX,cameraAdjustY
+			frame = 0
+			for layer in @loadedMap.layers
+				[mapx,mapy]=[0,0]
+				for tile in layer
+					if tile>=0
+						[tilex,tiley,tileWidth,tileHeight] = @getTileSlice tile,frame
+						[blitX,blitY] = [mapx*tileWidth,mapy*tileHeight]
+						context.drawImage @tileset,tilex,tiley,tileWidth,tileHeight,blitX,blitY,tileWidth,tileHeight
+					if ++mapx>=@loadedMap.width
+						mapy+=1
+						mapx=0
+			null
+
 	getTileSlice:(tileNumber)=>
 		return [tileNumber * 16, 0, 16, 16 ]
+
 	pause:(halt=false)=>
 		@overworldResponse.disable()
 		if halt
@@ -127,6 +144,7 @@ class @GamePlay
 			else
 				clearTimeout @handle
 		@running = false
+
 	requestFrame:(cb)=>
 		if requestAnimationFrame != null
 			@handle = requestAnimFrame cb

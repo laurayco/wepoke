@@ -163,6 +163,7 @@
       this.play = __bind(this.play, this);
       this.getSave = __bind(this.getSave, this);
       this.overworldResponse = new OverworldControls(null, this["interface"]);
+      this["interface"].currentSave();
     }
 
     GamePlay.prototype.getSave = function(cb) {
@@ -190,39 +191,41 @@
     };
 
     GamePlay.prototype.frame = function() {
-      var blitX, blitY, boundsH, boundsW, context, frame, height, layer, mapx, mapy, tile, tileHeight, tileWidth, tilex, tiley, width, xpos, ypos, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4, _results;
-      _ref = [32, 32], width = _ref[0], height = _ref[1];
-      _ref1 = [this.canvas.width - width, this.canvas.height - height], boundsW = _ref1[0], boundsH = _ref1[1];
-      _ref2 = [Number.random(boundsW), Number.random(boundsH)], xpos = _ref2[0], ypos = _ref2[1];
-      context = this.canvas.getContext("2d");
-      context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      frame = 0;
-      _ref3 = this.loadedMap.layers;
-      _results = [];
-      for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-        layer = _ref3[_i];
-        _ref4 = [0, 0], mapx = _ref4[0], mapy = _ref4[1];
-        _results.push((function() {
-          var _j, _len1, _ref5, _ref6, _results1;
-          _results1 = [];
+      var _this = this;
+      return this.getSave(function(save) {
+        var blitX, blitY, boundsH, boundsW, cameraAdjustX, cameraAdjustY, context, frame, height, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, width, xpos, ypos, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+        _ref = [16, 32], playerSpriteWidth = _ref[0], playerSpriteHeight = _ref[1];
+        _ref1 = [save.position.x(), save.position.y()], playerPositionX = _ref1[0], playerPositionY = _ref1[1];
+        _ref2 = [16, 16], width = _ref2[0], height = _ref2[1];
+        _ref3 = [_this.canvas.width - width, _this.canvas.height - height], boundsW = _ref3[0], boundsH = _ref3[1];
+        _ref4 = [Number.random(boundsW), Number.random(boundsH)], xpos = _ref4[0], ypos = _ref4[1];
+        _ref5 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref5[0], cameraAdjustY = _ref5[1];
+        cameraAdjustX -= playerPositionX * width;
+        cameraAdjustY -= playerPositionY * height;
+        cameraAdjustX -= Math.abs((playerSpriteWidth - width) / 2);
+        context = _this.canvas.getContext("2d");
+        context.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
+        context.setTransform(1, 0, 0, 1, cameraAdjustX, cameraAdjustY);
+        frame = 0;
+        _ref6 = _this.loadedMap.layers;
+        for (_i = 0, _len = _ref6.length; _i < _len; _i++) {
+          layer = _ref6[_i];
+          _ref7 = [0, 0], mapx = _ref7[0], mapy = _ref7[1];
           for (_j = 0, _len1 = layer.length; _j < _len1; _j++) {
             tile = layer[_j];
             if (tile >= 0) {
-              _ref5 = this.getTileSlice(tile, frame), tilex = _ref5[0], tiley = _ref5[1], tileWidth = _ref5[2], tileHeight = _ref5[3];
-              _ref6 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref6[0], blitY = _ref6[1];
-              context.drawImage(this.tileset, tilex, tiley, tileWidth, tileHeight, blitX, blitY, tileWidth, tileHeight);
+              _ref8 = _this.getTileSlice(tile, frame), tilex = _ref8[0], tiley = _ref8[1], tileWidth = _ref8[2], tileHeight = _ref8[3];
+              _ref9 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref9[0], blitY = _ref9[1];
+              context.drawImage(_this.tileset, tilex, tiley, tileWidth, tileHeight, blitX, blitY, tileWidth, tileHeight);
             }
-            if (++mapx >= this.loadedMap.width) {
+            if (++mapx >= _this.loadedMap.width) {
               mapy += 1;
-              _results1.push(mapx = 0);
-            } else {
-              _results1.push(void 0);
+              mapx = 0;
             }
           }
-          return _results1;
-        }).call(this));
-      }
-      return _results;
+        }
+        return null;
+      });
     };
 
     GamePlay.prototype.getTileSlice = function(tileNumber) {
