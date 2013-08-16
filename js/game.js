@@ -6,7 +6,7 @@
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   OverworldControls = (function() {
-    var MenuHandler;
+    var MenuHandler, MovementHandler;
 
     MenuHandler = (function(_super) {
       __extends(MenuHandler, _super);
@@ -14,6 +14,10 @@
       MenuHandler.minHold = 100;
 
       MenuHandler.openMenu = 16;
+
+      MenuHandler.openInventory = 69;
+
+      MenuHandler.openRoster = 81;
 
       function MenuHandler(syndicator, owc) {
         MenuHandler.__super__.constructor.call(this, syndicator);
@@ -38,6 +42,82 @@
 
     })(InputEventDelegater);
 
+    MovementHandler = (function(_super) {
+      __extends(MovementHandler, _super);
+
+      MovementHandler.moveCodes = {
+        65: "left",
+        87: "up",
+        83: "down",
+        68: "right"
+      };
+
+      MovementHandler.holdRunning = 32;
+
+      MovementHandler.minHold = 30;
+
+      MovementHandler.currentDirection = null;
+
+      MovementHandler.running = false;
+
+      function MovementHandler(syndicator, owc) {
+        this.endMovement = __bind(this.endMovement, this);
+        this.changeMovement = __bind(this.changeMovement, this);
+        this.startMovement = __bind(this.startMovement, this);
+        this.handleSignalOff = __bind(this.handleSignalOff, this);
+        this.handleSignalOn = __bind(this.handleSignalOn, this);
+        this.shouldHandleSignal = __bind(this.shouldHandleSignal, this);
+        MovementHandler.__super__.constructor.call(this, syndicator);
+        this.overworldInterface = owc;
+      }
+
+      MovementHandler.prototype.shouldHandleSignal = function(code, duration) {
+        return code in this.constructor.moveCodes || code === this.constructor.holdRunning;
+      };
+
+      MovementHandler.prototype.handleSignalOn = function(signal) {
+        var direction;
+        if (signal in this.constructor.moveCodes) {
+          direction = this.constructor.moveCodes[signal];
+          if (this.currentDirection === null) {
+            return this.startMovement(this.constructor.moveCodes[signal]);
+          } else if (this.currentDirection !== direction) {
+            return this.changeMovement(this.constructor.moveCodes[signal]);
+          }
+        } else if (signal === this.constructor.holdRunning && !this.running) {
+          console.log("Now running");
+          return this.running = true;
+        }
+      };
+
+      MovementHandler.prototype.handleSignalOff = function(signal) {
+        if (signal in this.constructor.moveCodes) {
+          if (this.constructor.moveCodes[signal] === this.currentDirection) {
+            this.currentDirection = null;
+            return this.endMovement();
+          }
+        } else if (signal === this.constructor.holdRunning && this.running) {
+          console.log("No longer running.");
+          return this.running = false;
+        }
+      };
+
+      MovementHandler.prototype.startMovement = function(direction) {
+        return console.log("Moving:", this.currentDirection = direction);
+      };
+
+      MovementHandler.prototype.changeMovement = function(direction) {
+        return console.log("New Direction:", this.currentDirection = direction);
+      };
+
+      MovementHandler.prototype.endMovement = function() {
+        return console.log("Done moving.");
+      };
+
+      return MovementHandler;
+
+    })(InputEventDelegater);
+
     function OverworldControls(player, gameInterface) {
       this.player = player;
       this.gameInterface = gameInterface;
@@ -47,14 +127,17 @@
       this.syndicator = new Syndicator();
       this.keyboard = new Keyboard(this.syndicator);
       this.menuHandler = new MenuHandler(this.syndicator, this);
+      this.movementHandler = new MovementHandler(this.syndicator, this);
     }
 
     OverworldControls.prototype.enable = function() {
-      return this.menuHandler.enable();
+      this.menuHandler.enable();
+      return this.movementHandler.enable();
     };
 
     OverworldControls.prototype.disable = function() {
-      return this.menuHandler.disable();
+      this.menuHandler.disable();
+      return this.movementHandler.disable();
     };
 
     OverworldControls.prototype.openMenu = function() {
