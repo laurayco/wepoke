@@ -5,6 +5,7 @@ openUrl = ( url, method='GET')->
 	req
 
 class @GameLoader
+
 	constructor:(opts)->
 		@canvas = opts.gameCanvas
 		@game = null
@@ -33,6 +34,7 @@ class @GameLoader
 					detail:newValue
 				}
 		@database = new GameDatabase()
+
 	_currentMode:=>
 		if @currentSave()==null
 			if @availableSaves().length < 1
@@ -41,12 +43,16 @@ class @GameLoader
 				return "choosing"
 		else
 			return @gameMode()
+
 	exploreGame:=>
 		if @gameMode()!="exploring"
 			@gameMode "exploring"
+
 	chooseSave:(saveData)=>
 		@currentSave new GameSave saveData
+
 	startNewGame:=> @chooseSave @defaultSave()
+
 	saveGameState:(save=null,callback=null)=>
 		if not (save instanceof GameSave)
 			throw {
@@ -55,12 +61,14 @@ class @GameLoader
 				detail:"An attempt to save a non-save object was made."
 			}
 		@database.saveGame save.exportForSave(),callback
+
 	saveGame:()=>
 		@saveGameState @currentSave(),(errors)=>
 			if errors==null
 				@exploreGame()
 			else
 				console.log errors
+
 	defaultSave:->
 		id:Date.now()
 		name:null
@@ -75,20 +83,22 @@ class @GameLoader
 			z:0
 		variables:{}
 		flags:[]
+
 	loadMap:(mapID,callback)=>
 		[running,oldMode] = [@game.running,@gameMode()]
 		@gameMode "loading"
 		if running
 			@game.pause
-		@database.getMap mapID,(map,errors)=>
-			if map!=null
+		@database.getMap mapID,(mapObject,errors)=>
+			if mapObject!=null
 				@gameMode oldMode
 				if running
 					@game.play
 				tileset = new Image()
-				tileset.src = "tileset/#{map.tileset}.png"
+				tileset.src = "tileset/#{mapObject.tileset}.png"
 				tileset.onload = (event)->
-					callback map,tileset
+					callback mapObject,tileset
+
 	prepare:=>
 		@database.prepare (errors)=>
 			if errors==null
@@ -130,7 +140,9 @@ class @GameSave
 
 class @GameDatabase
 	iddb:null
+
 	ready:=>return @iddb!=null
+
 	prepare:(cb)->
 		[that,request] = [@,indexedDB.open("wepokedb",2)]
 		request.onupgradeneeded = @_setupDatabase
@@ -139,40 +151,48 @@ class @GameDatabase
 			cb(null)
 		request.onerror = (event)->
 			cb(event)
+
 	_setupDatabase:(event)->
 		database = event.target.result
 		#adding a saves storage.
 		saveStore = database.createObjectStore "gameSaves",{keyPath:"id"}
 		pokedexStore = database.createObjectStore "pokedex",{keyPath:"id"}
 		mapStore = database.createObjectStore "maps",{keyPath:"id"}
+
 	getMap:(id,cb)=>
 		transaction = @iddb.transaction ["maps"],'readwrite'
 		mapStore = transaction.objectStore "maps"
 		req = mapStore.get id
-		downloadMap = ()=>
-			@downloadMap id,(map)->
-				cb event.target.result
+		beenDone = false
+		triggerDownloadMap = ()=>
+			if not beenDone
+				beenDone = true
+				@downloadMap id,(mapObject)->
+					cb mapObject
 		req.onsuccess = (event)->
-			if typeof event.target.result isnt "undefined"
+			if (event.target.result)?
 				cb event.target.result
 			else
-				downloadMap()
+				triggerDownloadMap()
 		req.onerror = ( event ) ->
 			console.log event
-			downloadMap()
+			triggerDownloadMap()
 		null
+
 	downloadMap:(id,cb)=>
 		url = openUrl "map/#{id}.json"
 		url.send()
 		url.onreadystatechange = (event)=>
 			if url.readyState == 4
-				console.log map = JSON.parse url.responseText
-				@storeMap map
-				cb map
+				mapObject = JSON.parse url.responseText
+				@storeMap mapObject
+				cb mapObject
+
 	storeMap:(map)=>
 		transaction = @iddb.transaction ["maps"],'readwrite'
 		mapStore = transaction.objectStore "maps"
 		mapStore.put map
+
 	saveGame:(save,cb=null)=>
 		if cb == null
 			cb = (errors)-> console.log errors
@@ -182,6 +202,7 @@ class @GameDatabase
 		req.onerror = cb
 		req.onsuccess = (event)->
 			cb null
+
 	readAll:(store,individualCallback,finalCallback)=>
 		transaction = @iddb.transaction [store],"readwrite"
 		cursorRequest = transaction.objectStore(store).openCursor()
@@ -197,3 +218,6 @@ class @GameDatabase
 	thing.prepare()
 	ko.applyBindings thing
 	thing
+
+@resetDatabase = ->
+	indexedDB.deleteDatabase("wepokedb")

@@ -141,17 +141,17 @@
       if (running) {
         this.game.pause;
       }
-      return this.database.getMap(mapID, function(map, errors) {
+      return this.database.getMap(mapID, function(mapObject, errors) {
         var tileset;
-        if (map !== null) {
+        if (mapObject !== null) {
           _this.gameMode(oldMode);
           if (running) {
             _this.game.play;
           }
           tileset = new Image();
-          tileset.src = "tileset/" + map.tileset + ".png";
+          tileset.src = "tileset/" + mapObject.tileset + ".png";
           return tileset.onload = function(event) {
-            return callback(map, tileset);
+            return callback(mapObject, tileset);
           };
         }
       });
@@ -259,26 +259,30 @@
     };
 
     GameDatabase.prototype.getMap = function(id, cb) {
-      var downloadMap, mapStore, req, transaction,
+      var beenDone, mapStore, req, transaction, triggerDownloadMap,
         _this = this;
       transaction = this.iddb.transaction(["maps"], 'readwrite');
       mapStore = transaction.objectStore("maps");
       req = mapStore.get(id);
-      downloadMap = function() {
-        return _this.downloadMap(id, function(map) {
-          return cb(event.target.result);
-        });
+      beenDone = false;
+      triggerDownloadMap = function() {
+        if (!beenDone) {
+          beenDone = true;
+          return _this.downloadMap(id, function(mapObject) {
+            return cb(mapObject);
+          });
+        }
       };
       req.onsuccess = function(event) {
-        if (typeof event.target.result !== "undefined") {
+        if (event.target.result != null) {
           return cb(event.target.result);
         } else {
-          return downloadMap();
+          return triggerDownloadMap();
         }
       };
       req.onerror = function(event) {
         console.log(event);
-        return downloadMap();
+        return triggerDownloadMap();
       };
       return null;
     };
@@ -289,11 +293,11 @@
       url = openUrl("map/" + id + ".json");
       url.send();
       return url.onreadystatechange = function(event) {
-        var map;
+        var mapObject;
         if (url.readyState === 4) {
-          console.log(map = JSON.parse(url.responseText));
-          _this.storeMap(map);
-          return cb(map);
+          mapObject = JSON.parse(url.responseText);
+          _this.storeMap(mapObject);
+          return cb(mapObject);
         }
       };
     };
@@ -348,6 +352,10 @@
     thing.prepare();
     ko.applyBindings(thing);
     return thing;
+  };
+
+  this.resetDatabase = function() {
+    return indexedDB.deleteDatabase("wepokedb");
   };
 
 }).call(this);
