@@ -1,0 +1,13 @@
+{
+	"id":1,
+	"name":"Palette Town",
+	"tileset":"indoors",
+	"layers":[[0,0,0,
+	           0,1,0,
+	           1,1,1],
+	          [2,2,2,
+	           -1,-1,-1,
+	           -1,-1,-1]],
+	"events":[],
+	"width":3
+}
