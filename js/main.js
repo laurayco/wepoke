@@ -195,7 +195,6 @@
       this.location = ko.observableArray(data.location);
       this.id = data.id;
       this.position = ko.mapping.fromJS(data.position);
-      this.gender = data.gender || "m";
     }
 
     GameSave.prototype.exportForSave = function() {
@@ -207,8 +206,7 @@
         inventory: ko.utils.unwrapObservable(this.inventory),
         currency: ko.utils.unwrapObservable(this.currency),
         location: ko.utils.unwrapObservable(this.location),
-        position: ko.mapping.toJS(this.position),
-        gender: this.gender
+        position: ko.mapping.toJS(this.position)
       };
     };
 
