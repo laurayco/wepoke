@@ -154,10 +154,29 @@
       y: ko.observable(0)
     };
 
+    OverworldEntity.prototype.sprite = null;
+
+    OverworldEntity.prototype.direction = "down";
+
+    OverworldEntity.prototype._setSprite = function(sprite) {
+      return this.sprite = sprite;
+    };
+
     function OverworldEntity(cls, onLoad) {
       var _this = this;
-      OverworldSprite.loadSprite(this.spriteClass = cls, function(ows) {
-        return _this.sprite = ows;
+      if (onLoad == null) {
+        onLoad = null;
+      }
+      this._setSprite = __bind(this._setSprite, this);
+      if (onLoad === null) {
+        onLoad = function() {
+          return null;
+        };
+      }
+      this.spriteClass = cls;
+      OverworldSprite.loadSprite(this.spriteClass, function(spr) {
+        _this._setSprite(spr);
+        return onLoad(_this.sprite);
       });
     }
 
@@ -169,9 +188,17 @@
     __extends(HeroEntity, _super);
 
     function HeroEntity(saveInfo, onLoad) {
+      if (onLoad == null) {
+        onLoad = null;
+      }
+      if (onLoad === null) {
+        onLoad = function() {
+          return null;
+        };
+      }
+      HeroEntity.__super__.constructor.call(this, "hero_" + saveInfo.gender, onLoad);
       this.saveInfo = saveInfo;
-      HeroEntity.__super__.constructor.call(this, "hero_" + this.saveInfo.gender, onLoad);
-      this.position = this.saveInfo;
+      this.position = this.saveInfo.position;
     }
 
     return HeroEntity;
@@ -185,29 +212,40 @@
       if (cls in OverworldSprite.cache) {
         return cb(OverworldSprite.cache[cls]);
       } else {
-        return OverworldSprite.cache[cls] = new OverworldSprite(cls, cb);
+        return new OverworldSprite(cls, function(sprite) {
+          return cb(OverworldSprite.cache[cls] = sprite);
+        });
       }
     };
 
     function OverworldSprite(overworldClass, cb) {
+      var _this = this;
       this.overworldClass = overworldClass;
       this.render = __bind(this.render, this);
       this.image = new Image();
       this.image.src = "overworld/" + this.overworldClass + ".png";
-      this.image.onload = cb;
+      this.image.onload = function(event) {
+        return cb(_this);
+      };
     }
 
-    OverworldSprite.prototype.render = function(canvas, x, y, direction, frameStep, tw, th) {
-      var blitX, blitY, clipX, clipY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
+    OverworldSprite.prototype.render = function(context, x, y, direction, frameStep, tw, th) {
+      var blitX, blitY, frames, sliceX, sliceY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
       _ref = [x * tw, y * th], blitX = _ref[0], blitY = _ref[1];
-      _ref1 = [this.image.width / 4, this.image.height / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
+      _ref1 = [parseInt(this.image.width) / 4, parseInt(this.image.height) / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
       if (this.image.width > tw) {
-        blitX -= (this.image.width - tw) / 2;
+        blitX -= (parseInt(this.image.width) - tw) / 2;
       }
       if (this.image.height > th) {
-        blitY -= this.image.height - th;
+        blitY -= parseInt(this.image.height) - th;
       }
-      _ref2 = [frames[direction], 0], clipX = _ref2[0], clipY = _ref2[1];
+      frames = {
+        "down": 0,
+        "up": 1,
+        "left": 2,
+        "right": 3
+      };
+      _ref2 = [frames[direction], 0], sliceX = _ref2[0], sliceY = _ref2[1];
       return context.drawImage(this.image, sliceX, sliceY, spriteWidth, spriteHeight, blitX, blitY, spriteWidth, spriteHeight);
     };
 
@@ -219,6 +257,10 @@
     GamePlay.prototype.running = false;
 
     GamePlay.prototype.handle = null;
+
+    GamePlay.tileWidth = 16;
+
+    GamePlay.tileHeight = 16;
 
     function GamePlay(canvas, _interface) {
       this.canvas = canvas;
@@ -243,20 +285,43 @@
 
     GamePlay.prototype.tileset = null;
 
+    GamePlay.prototype.heroEntity = null;
+
     GamePlay.prototype.play = function() {
-      var _this = this;
-      if (this.loadedMap === null) {
-        this["interface"].loadMap(1, function(map, tileset) {
-          _this.loadedMap = map;
-          _this.tileset = tileset;
-          _this.running = true;
-          return _this.requestFrame(_this.frame);
-        });
-      } else {
-        this.running = true;
-        this.requestFrame(this.frame);
+      var allowPlay, checkBack, mapLoaded, playerLoaded, _ref,
+        _this = this;
+      allowPlay = function() {
+        _this.running = true;
+        _this.overworldResponse.enable();
+        _this.requestFrame(_this.frame);
+        return true;
+      };
+      _ref = [!(this.tileset === null || this.loadedMap === null), !this.heroEntity === null], mapLoaded = _ref[0], playerLoaded = _ref[1];
+      checkBack = function() {
+        if (mapLoaded && playerLoaded) {
+          return allowPlay();
+        } else {
+          return false;
+        }
+      };
+      if (!checkBack()) {
+        if (!mapLoaded) {
+          this["interface"].loadMap(1, function(mapObject, tileset) {
+            _this.loadedMap = mapObject;
+            _this.tileset = tileset;
+            mapLoaded = true;
+            return checkBack();
+          });
+        }
+        if (!playerLoaded) {
+          return this.getSave(function(saveInfo) {
+            return _this.heroEntity = new HeroEntity(saveInfo, function() {
+              playerLoaded = true;
+              return checkBack();
+            });
+          });
+        }
       }
-      return this.overworldResponse.enable();
     };
 
     GamePlay.prototype.frame = function() {
@@ -304,9 +369,7 @@
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         ow = _ref[_i];
-        _results.push(ow.getSprite(function(sprite) {
-          return sprite.render(context, ow.position.x, ow.position.y, ow.direction, 0, this.constructor.tileWidth, this.constructor.tileHeight);
-        }));
+        _results.push(ow.sprite.render(context, ow.position.x(), ow.position.y(), ow.direction, 0, this.constructor.tileWidth, this.constructor.tileHeight));
       }
       return _results;
     };

@@ -84,43 +84,65 @@ class @OverworldEntity
 	position:
 		x:ko.observable 0
 		y:ko.observable 0
-	constructor:(cls,onLoad)->
-		OverworldSprite.loadSprite @spriteClass = cls,(ows)=>
-			@sprite = ows
+	sprite:null
+	direction:"down"
+	_setSprite:(sprite)=>@sprite=sprite
+	constructor:(cls,onLoad=null)->
+		if onLoad is null
+			onLoad = ()->null
+		@spriteClass = cls
+		OverworldSprite.loadSprite @spriteClass,(spr)=>
+			@_setSprite spr
+			onLoad @sprite
 
 class @HeroEntity extends OverworldEntity
-	constructor:(@saveInfo,onLoad)->
-		super "hero_#{@saveInfo.gender}", onLoad
-		@position = @saveInfo
+	constructor:(saveInfo,onLoad=null)->
+		if onLoad is null
+			onLoad = ()->null
+		super "hero_#{saveInfo.gender}", onLoad
+		@saveInfo = saveInfo
+		@position = @saveInfo.position
 
 class @OverworldSprite
 	@cache:{}
+
 	@loadSprite:(cls,cb)=>
 		if cls of @cache
 			cb @cache[cls]
 		else
-			@cache[cls]=new OverworldSprite cls,cb
+			new OverworldSprite cls,(sprite)=>
+				cb @cache[cls] = sprite
+
 	constructor:(@overworldClass,cb)->
 		@image = new Image()
 		@image.src = "overworld/#{@overworldClass}.png"
-		@image.onload = cb
-	render:(canvas,x,y,direction,frameStep,tw,th)=>
+		@image.onload = (event)=> cb @
+
+	render:(context,x,y,direction,frameStep,tw,th)=>
 		# x / y = map position of sprite BEFORE frameStep is considered.
 		# direction = up / down / left / right ( which way sprite is facing )
 		# frameStep = percentage ( 0 - 100 ) of how near the sprite is to next step.
 		# tw / th = tile width / tile height. used for centering purposes.
 		[blitX,blitY] = [x*tw,y*th]
-		[spriteWidth,spriteHeight] = [@image.width / 4,@image.height /3]
+		[spriteWidth,spriteHeight] = [parseInt(@image.width)/ 4,parseInt(@image.height)/3]
 		if @image.width > tw
-			blitX -= ((@image.width - tw ) / 2)
+			blitX -= ((parseInt(@image.width) - tw ) / 2)
 		if @image.height > th
-			blitY -= (@image.height - th)
-		[clipX,clipY] = [frames[direction],0]
+			blitY -= (parseInt(@image.height) - th)
+		frames =
+			"down":0
+			"up":1
+			"left":2
+			"right":3
+		[sliceX,sliceY] = [frames[direction],0]
 		context.drawImage @image,sliceX,sliceY,spriteWidth,spriteHeight,blitX,blitY,spriteWidth,spriteHeight
 
 class @GamePlay
 	running:false
 	handle:null
+
+	@tileWidth:16
+	@tileHeight:16
 
 	constructor:(@canvas,@interface)->
 		@overworldResponse = new OverworldControls null,@interface
@@ -130,18 +152,33 @@ class @GamePlay
 
 	loadedMap:null
 	tileset:null
+	heroEntity:null
 
 	play:=>
-		if @loadedMap == null
-			@interface.loadMap 1,(map,tileset)=>
-				@loadedMap = map
-				@tileset = tileset
-				@running = true
-				@requestFrame @frame
-		else
-			@running=true
+		allowPlay = ()=>
+			@running = true
+			@overworldResponse.enable()
 			@requestFrame @frame
-		@overworldResponse.enable()
+			true
+		
+		[mapLoaded,playerLoaded] = [not (@tileset is null or @loadedMap is null),not @heroEntity is null]
+		checkBack = ()=>
+			if mapLoaded and playerLoaded
+				allowPlay()
+			else
+				false
+		if not checkBack()
+			if not mapLoaded
+				@interface.loadMap 1,(mapObject,tileset)=>
+					@loadedMap = mapObject
+					@tileset = tileset
+					mapLoaded = true
+					checkBack()
+			if not playerLoaded
+				@getSave (saveInfo)=>
+					@heroEntity = new HeroEntity saveInfo,()=>
+						playerLoaded = true
+						checkBack()
 
 	frame:=>
 		#do things per-frame here. yup.
@@ -174,8 +211,7 @@ class @GamePlay
 
 	drawOverworlds:(context)=>
 		for ow in @getOverworlds true
-			ow.getSprite (sprite)->
-				sprite.render context, ow.position.x, ow.position.y,ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
+			ow.sprite.render context,ow.position.x(),ow.position.y(),ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
 
 	getOverworlds:(includeHero)=>
 		r = if includeHero then [@heroEntity] else []
