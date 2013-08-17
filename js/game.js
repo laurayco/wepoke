@@ -313,7 +313,7 @@
 
     GamePlay.prototype.getOverworlds = function(includeHero) {
       var r;
-      return r = includeHero ? [this.getSave()] : [];
+      return r = includeHero ? [this.heroEntity] : [];
     };
 
     GamePlay.prototype.getTileSlice = function(tileNumber) {

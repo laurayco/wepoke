@@ -178,7 +178,7 @@ class @GamePlay
 				sprite.render context, ow.position.x, ow.position.y,ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
 
 	getOverworlds:(includeHero)=>
-		r = if includeHero then [@getSave()] else []
+		r = if includeHero then [@heroEntity] else []
 		#bring in the others from the map.
 		#eventually. maybe. meh.
 
