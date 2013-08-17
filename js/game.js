@@ -148,6 +148,73 @@
 
   }).call(this);
 
+  this.OverworldEntity = (function() {
+    OverworldEntity.prototype.position = {
+      x: ko.observable(0),
+      y: ko.observable(0)
+    };
+
+    function OverworldEntity(cls, onLoad) {
+      var _this = this;
+      OverworldSprite.loadSprite(this.spriteClass = cls, function(ows) {
+        return _this.sprite = ows;
+      });
+    }
+
+    return OverworldEntity;
+
+  })();
+
+  this.HeroEntity = (function(_super) {
+    __extends(HeroEntity, _super);
+
+    function HeroEntity(saveInfo, onLoad) {
+      this.saveInfo = saveInfo;
+      HeroEntity.__super__.constructor.call(this, "hero_" + this.saveInfo.gender, onLoad);
+      this.position = this.saveInfo;
+    }
+
+    return HeroEntity;
+
+  })(OverworldEntity);
+
+  this.OverworldSprite = (function() {
+    OverworldSprite.cache = {};
+
+    OverworldSprite.loadSprite = function(cls, cb) {
+      if (cls in OverworldSprite.cache) {
+        return cb(OverworldSprite.cache[cls]);
+      } else {
+        return OverworldSprite.cache[cls] = new OverworldSprite(cls, cb);
+      }
+    };
+
+    function OverworldSprite(overworldClass, cb) {
+      this.overworldClass = overworldClass;
+      this.render = __bind(this.render, this);
+      this.image = new Image();
+      this.image.src = "overworld/" + this.overworldClass + ".png";
+      this.image.onload = cb;
+    }
+
+    OverworldSprite.prototype.render = function(canvas, x, y, direction, frameStep, tw, th) {
+      var blitX, blitY, clipX, clipY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
+      _ref = [x * tw, y * th], blitX = _ref[0], blitY = _ref[1];
+      _ref1 = [this.image.width / 4, this.image.height / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
+      if (this.image.width > tw) {
+        blitX -= (this.image.width - tw) / 2;
+      }
+      if (this.image.height > th) {
+        blitY -= this.image.height - th;
+      }
+      _ref2 = [frames[direction], 0], clipX = _ref2[0], clipY = _ref2[1];
+      return context.drawImage(this.image, sliceX, sliceY, spriteWidth, spriteHeight, blitX, blitY, spriteWidth, spriteHeight);
+    };
+
+    return OverworldSprite;
+
+  }).call(this);
+
   this.GamePlay = (function() {
     GamePlay.prototype.running = false;
 
@@ -159,6 +226,8 @@
       this.requestFrame = __bind(this.requestFrame, this);
       this.pause = __bind(this.pause, this);
       this.getTileSlice = __bind(this.getTileSlice, this);
+      this.getOverworlds = __bind(this.getOverworlds, this);
+      this.drawOverworlds = __bind(this.drawOverworlds, this);
       this.frame = __bind(this.frame, this);
       this.play = __bind(this.play, this);
       this.getSave = __bind(this.getSave, this);
@@ -224,8 +293,27 @@
             }
           }
         }
+        _this.drawOverworlds(context);
         return null;
       });
+    };
+
+    GamePlay.prototype.drawOverworlds = function(context) {
+      var ow, _i, _len, _ref, _results;
+      _ref = this.getOverworlds(true);
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        ow = _ref[_i];
+        _results.push(ow.getSprite(function(sprite) {
+          return sprite.render(context, ow.position.x, ow.position.y, ow.direction, 0, this.constructor.tileWidth, this.constructor.tileHeight);
+        }));
+      }
+      return _results;
+    };
+
+    GamePlay.prototype.getOverworlds = function(includeHero) {
+      var r;
+      return r = includeHero ? [this.getSave()] : [];
     };
 
     GamePlay.prototype.getTileSlice = function(tileNumber) {

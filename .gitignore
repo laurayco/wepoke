@@ -213,3 +213,7 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+js/main.js
+js/game.js
+js/input.game.js

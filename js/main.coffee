@@ -127,6 +127,7 @@ class @GameSave
 		#position on the loaded map.
 		#x = east/west, y = north/south, z = altitude
 		@position = ko.mapping.fromJS data.position
+		@gender = data.gender||"m"
 	exportForSave:=>
 		id:ko.utils.unwrapObservable @id
 		name:ko.utils.unwrapObservable @name
@@ -136,7 +137,7 @@ class @GameSave
 		currency:ko.utils.unwrapObservable @currency
 		location:ko.utils.unwrapObservable @location
 		position:ko.mapping.toJS(@position)
-
+		gender:@gender
 
 class @GameDatabase
 	iddb:null

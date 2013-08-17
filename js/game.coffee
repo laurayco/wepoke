@@ -80,6 +80,44 @@ class OverworldControls
 
 	openMenu:=> @gameInterface.gameMode "saving"
 
+class @OverworldEntity
+	position:
+		x:ko.observable 0
+		y:ko.observable 0
+	constructor:(cls,onLoad)->
+		OverworldSprite.loadSprite @spriteClass = cls,(ows)=>
+			@sprite = ows
+
+class @HeroEntity extends OverworldEntity
+	constructor:(@saveInfo,onLoad)->
+		super "hero_#{@saveInfo.gender}", onLoad
+		@position = @saveInfo
+
+class @OverworldSprite
+	@cache:{}
+	@loadSprite:(cls,cb)=>
+		if cls of @cache
+			cb @cache[cls]
+		else
+			@cache[cls]=new OverworldSprite cls,cb
+	constructor:(@overworldClass,cb)->
+		@image = new Image()
+		@image.src = "overworld/#{@overworldClass}.png"
+		@image.onload = cb
+	render:(canvas,x,y,direction,frameStep,tw,th)=>
+		# x / y = map position of sprite BEFORE frameStep is considered.
+		# direction = up / down / left / right ( which way sprite is facing )
+		# frameStep = percentage ( 0 - 100 ) of how near the sprite is to next step.
+		# tw / th = tile width / tile height. used for centering purposes.
+		[blitX,blitY] = [x*tw,y*th]
+		[spriteWidth,spriteHeight] = [@image.width / 4,@image.height /3]
+		if @image.width > tw
+			blitX -= ((@image.width - tw ) / 2)
+		if @image.height > th
+			blitY -= (@image.height - th)
+		[clipX,clipY] = [frames[direction],0]
+		context.drawImage @image,sliceX,sliceY,spriteWidth,spriteHeight,blitX,blitY,spriteWidth,spriteHeight
+
 class @GamePlay
 	running:false
 	handle:null
@@ -131,7 +169,18 @@ class @GamePlay
 					if ++mapx>=@loadedMap.width
 						mapy+=1
 						mapx=0
+			@drawOverworlds context
 			null
+
+	drawOverworlds:(context)=>
+		for ow in @getOverworlds true
+			ow.getSprite (sprite)->
+				sprite.render context, ow.position.x, ow.position.y,ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
+
+	getOverworlds:(includeHero)=>
+		r = if includeHero then [@getSave()] else []
+		#bring in the others from the map.
+		#eventually. maybe. meh.
 
 	getTileSlice:(tileNumber)=>
 		return [tileNumber * 16, 0, 16, 16 ]
