@@ -234,11 +234,13 @@
       _ref = [x * tw, y * th], blitX = _ref[0], blitY = _ref[1];
       _ref1 = [parseInt(this.image.width) / 4, parseInt(this.image.height) / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
       if (this.image.width > tw) {
-        blitX -= (parseInt(this.image.width) - tw) / 2;
+        blitX -= (spriteWidth - tw) / 2;
       }
-      if (this.image.height > th) {
-        blitY -= parseInt(this.image.height) - th;
+      if (spriteHeight > th) {
+        blitY -= spriteHeight - th;
       }
+      console.log("Drawing position:", blitX, blitY);
+      console.log("Map position:", x, y);
       frames = {
         "down": 0,
         "up": 1,
@@ -270,6 +272,9 @@
       this.getTileSlice = __bind(this.getTileSlice, this);
       this.getOverworlds = __bind(this.getOverworlds, this);
       this.drawOverworlds = __bind(this.drawOverworlds, this);
+      this.changePlayerMovement = __bind(this.changePlayerMovement, this);
+      this.endPlayerMovement = __bind(this.endPlayerMovement, this);
+      this.startPlayerMovement = __bind(this.startPlayerMovement, this);
       this.frame = __bind(this.frame, this);
       this.play = __bind(this.play, this);
       this.getSave = __bind(this.getSave, this);
@@ -363,6 +368,18 @@
       });
     };
 
+    GamePlay.prototype.startPlayerMovement = function(direction) {
+      return null;
+    };
+
+    GamePlay.prototype.endPlayerMovement = function() {
+      return null;
+    };
+
+    GamePlay.prototype.changePlayerMovement = function(direction) {
+      return null;
+    };
+
     GamePlay.prototype.drawOverworlds = function(context) {
       var ow, _i, _len, _ref, _results;
       _ref = this.getOverworlds(true);
@@ -380,7 +397,7 @@
     };
 
     GamePlay.prototype.getTileSlice = function(tileNumber) {
-      return [tileNumber * 16, 0, 16, 16];
+      return [tileNumber * this.constructor.tileWidth, 0, this.constructor.tileWidth, this.constructor.tileHeight];
     };
 
     GamePlay.prototype.pause = function(halt) {

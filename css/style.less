@@ -157,6 +157,8 @@
 
 html
 {
+	@canvasWidth:300px;
+	@canvasHeight:240px;
 	margin:0;
 	padding:0;
 	body
@@ -233,13 +235,26 @@ html
 			background:darken(fade(#6A6,70%),30%);
 			canvas
 			{
-				width:80%;
-				height:80%;
+				margin: auto;
+				top: 0; left: 0; bottom: 0; right: 0;
+				width:@canvasWidth;
+				height:@canvasHeight;
+				&.stretch
+				{
+					width:80%;
+					height:80%;
+					top:10%;
+					left:10%;
+					bottom:10%;
+					right:10%;
+				}
+				&:not(.stretch)
+				{
+					border:1px solid #fff;
+					box-shadow:rgba(0,0,0,.6) 0 2px 20px 4px;
+				}
 				position:absolute;
-				top:10%;
-				left:10%;
 				background:#000;
-				//margin:10% auto;
 			}
 		}
 		#savingScreen

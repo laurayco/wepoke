@@ -126,9 +126,11 @@ class @OverworldSprite
 		[blitX,blitY] = [x*tw,y*th]
 		[spriteWidth,spriteHeight] = [parseInt(@image.width)/ 4,parseInt(@image.height)/3]
 		if @image.width > tw
-			blitX -= ((parseInt(@image.width) - tw ) / 2)
-		if @image.height > th
-			blitY -= (parseInt(@image.height) - th)
+			blitX -= ((spriteWidth - tw ) / 2)
+		if spriteHeight > th
+			blitY -= (spriteHeight - th)
+		console.log "Drawing position:",blitX,blitY
+		console.log "Map position:",x,y
 		frames =
 			"down":0
 			"up":1
@@ -209,6 +211,15 @@ class @GamePlay
 			@drawOverworlds context
 			null
 
+	startPlayerMovement:(direction)=>
+		null
+
+	endPlayerMovement:()=>
+		null
+
+	changePlayerMovement:(direction)=>
+		null
+
 	drawOverworlds:(context)=>
 		for ow in @getOverworlds true
 			ow.sprite.render context,ow.position.x(),ow.position.y(),ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
@@ -219,7 +230,7 @@ class @GamePlay
 		#eventually. maybe. meh.
 
 	getTileSlice:(tileNumber)=>
-		return [tileNumber * 16, 0, 16, 16 ]
+		return [tileNumber * @constructor.tileWidth, 0, @constructor.tileWidth, @constructor.tileHeight ]
 
 	pause:(halt=false)=>
 		@overworldResponse.disable()
