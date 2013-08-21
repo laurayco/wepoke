@@ -80,12 +80,21 @@ class OverworldControls
 
 	openMenu:=> @gameInterface.gameMode "saving"
 
+class @OverworldMovementInterface
+	@stepDuration:1000#1 step requires one second.
+	elapsedTime:0
+	constructor:(bindedOverworld)->
+		@overworld = bindedOverworld
+	progress:(time)=>@elapsedTime += 1
+	reset:=>@elapsedTime = 0
+
 class @OverworldEntity
 	position:
 		x:ko.observable 0
 		y:ko.observable 0
 	sprite:null
 	direction:"down"
+	nextStepCompletion:0#range between 0 and 100 as percentage.
 	_setSprite:(sprite)=>@sprite=sprite
 	constructor:(cls,onLoad=null)->
 		if onLoad is null
@@ -94,6 +103,13 @@ class @OverworldEntity
 		OverworldSprite.loadSprite @spriteClass,(spr)=>
 			@_setSprite spr
 			onLoad @sprite
+	render:(context,tw,th)=>
+		directionalMultiplier = 0
+		if @nextStepCompletion > 0
+			directionalMultiplier = {'left':tw,'right':tw,'up':th,'down',th}
+			directionalMultiplier = directionalMultiplier[@direction]
+		sf = math.floor (@nextStepCompletion/100*directionalMultiplier)
+		@sprite.render context,@position.x(),position.y(),@direction,sf,tw,th
 
 class @HeroEntity extends OverworldEntity
 	constructor:(saveInfo,onLoad=null)->
@@ -222,7 +238,7 @@ class @GamePlay
 
 	drawOverworlds:(context)=>
 		for ow in @getOverworlds true
-			ow.sprite.render context,ow.position.x(),ow.position.y(),ow.direction, 0, @constructor.tileWidth, @constructor.tileHeight
+			ow.render context, @constructor.tileWidth, @constructor.tileHeight
 
 	getOverworlds:(includeHero)=>
 		r = if includeHero then [@heroEntity] else []

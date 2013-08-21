@@ -148,6 +148,29 @@
 
   }).call(this);
 
+  this.OverworldMovementInterface = (function() {
+    OverworldMovementInterface.stepDuration = 1000;
+
+    OverworldMovementInterface.prototype.elapsedTime = 0;
+
+    function OverworldMovementInterface(bindedOverworld) {
+      this.reset = __bind(this.reset, this);
+      this.progress = __bind(this.progress, this);
+      this.overworld = bindedOverworld;
+    }
+
+    OverworldMovementInterface.prototype.progress = function(time) {
+      return this.elapsedTime += 1;
+    };
+
+    OverworldMovementInterface.prototype.reset = function() {
+      return this.elapsedTime = 0;
+    };
+
+    return OverworldMovementInterface;
+
+  })();
+
   this.OverworldEntity = (function() {
     OverworldEntity.prototype.position = {
       x: ko.observable(0),
@@ -158,6 +181,8 @@
 
     OverworldEntity.prototype.direction = "down";
 
+    OverworldEntity.prototype.nextStepCompletion = 0;
+
     OverworldEntity.prototype._setSprite = function(sprite) {
       return this.sprite = sprite;
     };
@@ -167,6 +192,7 @@
       if (onLoad == null) {
         onLoad = null;
       }
+      this.render = __bind(this.render, this);
       this._setSprite = __bind(this._setSprite, this);
       if (onLoad === null) {
         onLoad = function() {
@@ -179,6 +205,23 @@
         return onLoad(_this.sprite);
       });
     }
+
+    OverworldEntity.prototype.render = function(context, tw, th) {
+      var directionalMultiplier, sf;
+      directionalMultiplier = 0;
+      if (this.nextStepCompletion > 0) {
+        directionalMultiplier = {
+          'left': tw,
+          'right': tw,
+          'up': th,
+          'down': 'down',
+          th: th
+        };
+        directionalMultiplier = directionalMultiplier[this.direction];
+      }
+      sf = math.floor(this.nextStepCompletion / 100 * directionalMultiplier);
+      return this.sprite.render(context, this.position.x(), position.y(), this.direction, sf, tw, th);
+    };
 
     return OverworldEntity;
 
@@ -386,7 +429,7 @@
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         ow = _ref[_i];
-        _results.push(ow.sprite.render(context, ow.position.x(), ow.position.y(), ow.direction, 0, this.constructor.tileWidth, this.constructor.tileHeight));
+        _results.push(ow.render(context, this.constructor.tileWidth, this.constructor.tileHeight));
       }
       return _results;
     };
