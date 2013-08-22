@@ -25,8 +25,7 @@ class OverworldControls
 			68:"right"
 		@holdRunning:32
 		@minHold:30
-		@currentDirection:null
-		@running:false
+		direction:null
 
 		constructor:(syndicator,owc)->
 			super syndicator
@@ -42,29 +41,31 @@ class OverworldControls
 					@startMovement @constructor.moveCodes[signal]
 				else if @currentDirection isnt direction
 					@changeMovement @constructor.moveCodes[signal]
-			else if signal == @constructor.holdRunning and not @running
+			else if signal == @constructor.holdRunning and not @overworldInterface.game.heroEntity.running
 				console.log "Now running"
-				@running = true
+				@overworldInterface.game.heroEntity.running = true
 
 		handleSignalOff:(signal)=>
 			if signal of @constructor.moveCodes
 				if @constructor.moveCodes[signal] == @currentDirection
 					@currentDirection = null
 					@endMovement()
-			else if signal == @constructor.holdRunning and @running
+			else if signal == @constructor.holdRunning and @overworldInterface.game.heroEntity.running
 				console.log "No longer running."
-				@running = false
+				@overworldInterface.game.heroEntity.running = false
 
 		startMovement:(direction) =>
 			console.log "Moving:",@currentDirection = direction
+			@overworldInterface.game.heroEntity.startMoving @currentDirection
 
 		changeMovement:(direction) =>
 			console.log "New Direction:",@currentDirection = direction
+			@overworldInterface.game.heroEntity.changeDirection @currentDirection
 
 		endMovement:()=>
-			console.log "Done moving."
+			@overworldInterface.game.heroEntity.stopMoving()
 
-	constructor:(@player,@gameInterface)->
+	constructor:(@player,@gameInterface,@game)->
 		@syndicator = new Syndicator()
 		@keyboard = new Keyboard @syndicator
 		@menuHandler = new MenuHandler @syndicator,@
@@ -80,21 +81,18 @@ class OverworldControls
 
 	openMenu:=> @gameInterface.gameMode "saving"
 
-class @OverworldMovementInterface
-	@stepDuration:1000#1 step requires one second.
-	elapsedTime:0
-	constructor:(bindedOverworld)->
-		@overworld = bindedOverworld
-	progress:(time)=>@elapsedTime += 1
-	reset:=>@elapsedTime = 0
-
 class @OverworldEntity
 	position:
 		x:ko.observable 0
 		y:ko.observable 0
 	sprite:null
 	direction:"down"
+	speedMultiplier:1.0#if you start running, this will slowly progress towards
+	@maxSpeedPeek:3.0# this value here. Releasing the RUN button will slowly go
+	# bring the speed multiplier back down to 1.0, or if you quit moving altogether
+	# then speedMultiplier will automatically go back to 1.0
 	nextStepCompletion:0#range between 0 and 100 as percentage.
+	running:false
 	_setSprite:(sprite)=>@sprite=sprite
 	constructor:(cls,onLoad=null)->
 		if onLoad is null
@@ -108,8 +106,43 @@ class @OverworldEntity
 		if @nextStepCompletion > 0
 			directionalMultiplier = {'left':tw,'right':tw,'up':th,'down',th}
 			directionalMultiplier = directionalMultiplier[@direction]
-		sf = math.floor (@nextStepCompletion/100*directionalMultiplier)
-		@sprite.render context,@position.x(),position.y(),@direction,sf,tw,th
+		sf = Math.floor (@nextStepCompletion/100.0*directionalMultiplier)
+		@sprite.render context,@position.x(),@position.y(),@direction,sf,tw,th
+	startMoving:(direction)=>
+		console.log @direction = direction
+	changeDirection:(direction)=>
+		@direction = direction
+		@speedMultiplier = 1.0
+		@roundStep()
+	roundStep:()=>
+		if @nextStepProgress >= 50
+			@confirmStep()
+		else
+			@resetStep()
+	advanceStep:()=>
+		@getTargetPosition (targetPosition)=>
+			if targetPosition.x < 0
+				@resetStep()
+				@stopMoving()
+			if targetPosition.y < 0
+				@resetStep()
+				@stopMoving()
+		@nextStepCompletion += 10
+	resetStep:()=>
+		@nextStepCompletion = 0
+	confirmStep:()=>
+		if direction=='left'
+			position.x position.x()-1
+		else if direction=='right'
+			position.x position.x()+1
+		else if direction=='up'
+			position.y position.y()-1
+		else if direction=='down'
+			position.y position.y()+1
+		resetStep()
+	stopMoving:()=>
+		@roundStep()
+		@speedMultiplier = 1.0
 
 class @HeroEntity extends OverworldEntity
 	constructor:(saveInfo,onLoad=null)->
@@ -145,14 +178,18 @@ class @OverworldSprite
 			blitX -= ((spriteWidth - tw ) / 2)
 		if spriteHeight > th
 			blitY -= (spriteHeight - th)
-		console.log "Drawing position:",blitX,blitY
-		console.log "Map position:",x,y
+		blitX += Math.floor (frameStep / 3.0 * tw)
+		animationFrame = 0
+		frameStep -= 34
+		while frameStep > 0
+			animationFrame += 1
+			frameStep -= 34
 		frames =
 			"down":0
 			"up":1
 			"left":2
 			"right":3
-		[sliceX,sliceY] = [frames[direction],0]
+		[sliceX,sliceY] = [frames[direction] * spriteWidth,animationFrame * spriteHeight]
 		context.drawImage @image,sliceX,sliceY,spriteWidth,spriteHeight,blitX,blitY,spriteWidth,spriteHeight
 
 class @GamePlay
@@ -163,7 +200,7 @@ class @GamePlay
 	@tileHeight:16
 
 	constructor:(@canvas,@interface)->
-		@overworldResponse = new OverworldControls null,@interface
+		@overworldResponse = new OverworldControls null,@interface,@
 		@interface.currentSave()
 
 	getSave:(cb)=>cb @interface.currentSave()
@@ -225,6 +262,7 @@ class @GamePlay
 						mapy+=1
 						mapx=0
 			@drawOverworlds context
+			@requestFrame @frame
 			null
 
 	startPlayerMovement:(direction)=>

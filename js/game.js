@@ -56,9 +56,7 @@
 
       MovementHandler.minHold = 30;
 
-      MovementHandler.currentDirection = null;
-
-      MovementHandler.running = false;
+      MovementHandler.prototype.direction = null;
 
       function MovementHandler(syndicator, owc) {
         this.endMovement = __bind(this.endMovement, this);
@@ -84,9 +82,9 @@
           } else if (this.currentDirection !== direction) {
             return this.changeMovement(this.constructor.moveCodes[signal]);
           }
-        } else if (signal === this.constructor.holdRunning && !this.running) {
+        } else if (signal === this.constructor.holdRunning && !this.overworldInterface.game.heroEntity.running) {
           console.log("Now running");
-          return this.running = true;
+          return this.overworldInterface.game.heroEntity.running = true;
         }
       };
 
@@ -96,31 +94,34 @@
             this.currentDirection = null;
             return this.endMovement();
           }
-        } else if (signal === this.constructor.holdRunning && this.running) {
+        } else if (signal === this.constructor.holdRunning && this.overworldInterface.game.heroEntity.running) {
           console.log("No longer running.");
-          return this.running = false;
+          return this.overworldInterface.game.heroEntity.running = false;
         }
       };
 
       MovementHandler.prototype.startMovement = function(direction) {
-        return console.log("Moving:", this.currentDirection = direction);
+        console.log("Moving:", this.currentDirection = direction);
+        return this.overworldInterface.game.heroEntity.startMoving(this.currentDirection);
       };
 
       MovementHandler.prototype.changeMovement = function(direction) {
-        return console.log("New Direction:", this.currentDirection = direction);
+        console.log("New Direction:", this.currentDirection = direction);
+        return this.overworldInterface.game.heroEntity.changeDirection(this.currentDirection);
       };
 
       MovementHandler.prototype.endMovement = function() {
-        return console.log("Done moving.");
+        return this.overworldInterface.game.heroEntity.stopMoving();
       };
 
       return MovementHandler;
 
     })(InputEventDelegater);
 
-    function OverworldControls(player, gameInterface) {
+    function OverworldControls(player, gameInterface, game) {
       this.player = player;
       this.gameInterface = gameInterface;
+      this.game = game;
       this.openMenu = __bind(this.openMenu, this);
       this.disable = __bind(this.disable, this);
       this.enable = __bind(this.enable, this);
@@ -148,29 +149,6 @@
 
   }).call(this);
 
-  this.OverworldMovementInterface = (function() {
-    OverworldMovementInterface.stepDuration = 1000;
-
-    OverworldMovementInterface.prototype.elapsedTime = 0;
-
-    function OverworldMovementInterface(bindedOverworld) {
-      this.reset = __bind(this.reset, this);
-      this.progress = __bind(this.progress, this);
-      this.overworld = bindedOverworld;
-    }
-
-    OverworldMovementInterface.prototype.progress = function(time) {
-      return this.elapsedTime += 1;
-    };
-
-    OverworldMovementInterface.prototype.reset = function() {
-      return this.elapsedTime = 0;
-    };
-
-    return OverworldMovementInterface;
-
-  })();
-
   this.OverworldEntity = (function() {
     OverworldEntity.prototype.position = {
       x: ko.observable(0),
@@ -181,7 +159,13 @@
 
     OverworldEntity.prototype.direction = "down";
 
+    OverworldEntity.prototype.speedMultiplier = 1.0;
+
+    OverworldEntity.maxSpeedPeek = 3.0;
+
     OverworldEntity.prototype.nextStepCompletion = 0;
+
+    OverworldEntity.prototype.running = false;
 
     OverworldEntity.prototype._setSprite = function(sprite) {
       return this.sprite = sprite;
@@ -192,6 +176,13 @@
       if (onLoad == null) {
         onLoad = null;
       }
+      this.stopMoving = __bind(this.stopMoving, this);
+      this.confirmStep = __bind(this.confirmStep, this);
+      this.resetStep = __bind(this.resetStep, this);
+      this.advanceStep = __bind(this.advanceStep, this);
+      this.roundStep = __bind(this.roundStep, this);
+      this.changeDirection = __bind(this.changeDirection, this);
+      this.startMoving = __bind(this.startMoving, this);
       this.render = __bind(this.render, this);
       this._setSprite = __bind(this._setSprite, this);
       if (onLoad === null) {
@@ -219,8 +210,63 @@
         };
         directionalMultiplier = directionalMultiplier[this.direction];
       }
-      sf = math.floor(this.nextStepCompletion / 100 * directionalMultiplier);
-      return this.sprite.render(context, this.position.x(), position.y(), this.direction, sf, tw, th);
+      sf = Math.floor(this.nextStepCompletion / 100.0 * directionalMultiplier);
+      return this.sprite.render(context, this.position.x(), this.position.y(), this.direction, sf, tw, th);
+    };
+
+    OverworldEntity.prototype.startMoving = function(direction) {
+      return console.log(this.direction = direction);
+    };
+
+    OverworldEntity.prototype.changeDirection = function(direction) {
+      this.direction = direction;
+      this.speedMultiplier = 1.0;
+      return this.roundStep();
+    };
+
+    OverworldEntity.prototype.roundStep = function() {
+      if (this.nextStepProgress >= 50) {
+        return this.confirmStep();
+      } else {
+        return this.resetStep();
+      }
+    };
+
+    OverworldEntity.prototype.advanceStep = function() {
+      var _this = this;
+      this.getTargetPosition(function(targetPosition) {
+        if (targetPosition.x < 0) {
+          _this.resetStep();
+          _this.stopMoving();
+        }
+        if (targetPosition.y < 0) {
+          _this.resetStep();
+          return _this.stopMoving();
+        }
+      });
+      return this.nextStepCompletion += 10;
+    };
+
+    OverworldEntity.prototype.resetStep = function() {
+      return this.nextStepCompletion = 0;
+    };
+
+    OverworldEntity.prototype.confirmStep = function() {
+      if (direction === 'left') {
+        position.x(position.x() - 1);
+      } else if (direction === 'right') {
+        position.x(position.x() + 1);
+      } else if (direction === 'up') {
+        position.y(position.y() - 1);
+      } else if (direction === 'down') {
+        position.y(position.y() + 1);
+      }
+      return resetStep();
+    };
+
+    OverworldEntity.prototype.stopMoving = function() {
+      this.roundStep();
+      return this.speedMultiplier = 1.0;
     };
 
     return OverworldEntity;
@@ -273,7 +319,7 @@
     }
 
     OverworldSprite.prototype.render = function(context, x, y, direction, frameStep, tw, th) {
-      var blitX, blitY, frames, sliceX, sliceY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
+      var animationFrame, blitX, blitY, frames, sliceX, sliceY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
       _ref = [x * tw, y * th], blitX = _ref[0], blitY = _ref[1];
       _ref1 = [parseInt(this.image.width) / 4, parseInt(this.image.height) / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
       if (this.image.width > tw) {
@@ -282,15 +328,20 @@
       if (spriteHeight > th) {
         blitY -= spriteHeight - th;
       }
-      console.log("Drawing position:", blitX, blitY);
-      console.log("Map position:", x, y);
+      blitX += Math.floor(frameStep / 3.0 * tw);
+      animationFrame = 0;
+      frameStep -= 34;
+      while (frameStep > 0) {
+        animationFrame += 1;
+        frameStep -= 34;
+      }
       frames = {
         "down": 0,
         "up": 1,
         "left": 2,
         "right": 3
       };
-      _ref2 = [frames[direction], 0], sliceX = _ref2[0], sliceY = _ref2[1];
+      _ref2 = [frames[direction] * spriteWidth, animationFrame * spriteHeight], sliceX = _ref2[0], sliceY = _ref2[1];
       return context.drawImage(this.image, sliceX, sliceY, spriteWidth, spriteHeight, blitX, blitY, spriteWidth, spriteHeight);
     };
 
@@ -321,7 +372,7 @@
       this.frame = __bind(this.frame, this);
       this.play = __bind(this.play, this);
       this.getSave = __bind(this.getSave, this);
-      this.overworldResponse = new OverworldControls(null, this["interface"]);
+      this.overworldResponse = new OverworldControls(null, this["interface"], this);
       this["interface"].currentSave();
     }
 
@@ -407,6 +458,7 @@
           }
         }
         _this.drawOverworlds(context);
+        _this.requestFrame(_this.frame);
         return null;
       });
     };
