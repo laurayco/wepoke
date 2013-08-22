@@ -188,7 +188,7 @@
         };
       }
       this.spriteClass = cls;
-      this.stepTimer = new RepeatingFunction(10, false, this.advanceStep);
+      this.stepTimer = new RepeatingFunction(20, false, this.advanceStep);
       OverworldSprite.loadSprite(this.spriteClass, function(spr) {
         _this.sprite = spr;
         return onLoad(_this.sprite);
@@ -290,12 +290,45 @@
       var _this = this;
       this.overworldClass = overworldClass;
       this.render = __bind(this.render, this);
+      this.calculateBlit = __bind(this.calculateBlit, this);
       this.image = new Image();
       this.image.src = "overworld/" + this.overworldClass + ".png";
       this.image.onload = function(event) {
         return cb(_this);
       };
     }
+
+    OverworldSprite.prototype.calculateBlit = function(x, y, frameStep, direction, tw, th) {
+      var animationFrame, blitX, blitY, spriteHeight, spriteWidth, _ref, _ref1;
+      _ref = [x * tw, y * th], blitX = _ref[0], blitY = _ref[1];
+      _ref1 = [parseInt(this.image.width) / 4, parseInt(this.image.height) / 3], spriteWidth = _ref1[0], spriteHeight = _ref1[1];
+      if (this.image.width > tw) {
+        blitX -= (spriteWidth - tw) / 2;
+      }
+      if (spriteHeight > th) {
+        blitY -= spriteHeight - th;
+      }
+      animationFrame = 0;
+      frameStep -= 34;
+      while (frameStep > 0) {
+        animationFrame += 1;
+        frameStep -= 34;
+      }
+      if (direction === 'right') {
+        blitX += Math.floor(animationFrame / 3.0 * tw);
+      } else if (direction === 'left') {
+        blitX -= Math.floor(animationFrame / 3.0 * tw);
+      } else if (direction === 'up') {
+        blitY -= Math.floor(animationFrame / 3.0 * th);
+      } else if (direction === 'down') {
+        blitY += Math.floor(animationFrame / 3.0 * th);
+      }
+      return {
+        x: blitX,
+        y: blitY,
+        frame: animationFrame
+      };
+    };
 
     OverworldSprite.prototype.render = function(context, x, y, direction, frameStep, tw, th) {
       var animationFrame, blitX, blitY, frames, sliceX, sliceY, spriteHeight, spriteWidth, _ref, _ref1, _ref2;
@@ -413,26 +446,27 @@
     GamePlay.prototype.frame = function() {
       var _this = this;
       return this.getSave(function(save) {
-        var blitX, blitY, cameraAdjustX, cameraAdjustY, context, frame, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
+        var blitX, blitY, cameraAdjustX, cameraAdjustY, context, frame, layer, mapx, mapy, playerPositionInfo, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileH, tileHeight, tileW, tileWidth, tilex, tiley, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
         _ref = [16, 32], playerSpriteWidth = _ref[0], playerSpriteHeight = _ref[1];
         _ref1 = [save.position.x(), save.position.y()], playerPositionX = _ref1[0], playerPositionY = _ref1[1];
         _ref2 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref2[0], cameraAdjustY = _ref2[1];
-        cameraAdjustX -= playerPositionX * _this.constructor.tileWidth;
-        cameraAdjustY -= playerPositionY * _this.constructor.tileHeight;
-        cameraAdjustX -= Math.abs((playerSpriteWidth - _this.constructor.tileWidth) / 2);
+        _ref3 = [_this.constructor.tileWidth, _this.constructor.tileHeight], tileW = _ref3[0], tileH = _ref3[1];
+        playerPositionInfo = _this.heroEntity.sprite.calculateBlit(_this.heroEntity.position.x(), _this.heroEntity.position.y(), _this.heroEntity.nextStepCompletion, _this.heroEntity.direction, tileW, tileH);
+        cameraAdjustX -= playerPositionInfo.x;
+        cameraAdjustY -= playerPositionInfo.y;
         context = _this.canvas.getContext("2d");
         context.clearRect(-cameraAdjustX, -cameraAdjustY, _this.canvas.width, _this.canvas.height);
         context.setTransform(1, 0, 0, 1, cameraAdjustX, cameraAdjustY);
         frame = 0;
-        _ref3 = _this.loadedMap.layers;
-        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
-          layer = _ref3[_i];
-          _ref4 = [0, 0], mapx = _ref4[0], mapy = _ref4[1];
+        _ref4 = _this.loadedMap.layers;
+        for (_i = 0, _len = _ref4.length; _i < _len; _i++) {
+          layer = _ref4[_i];
+          _ref5 = [0, 0], mapx = _ref5[0], mapy = _ref5[1];
           for (_j = 0, _len1 = layer.length; _j < _len1; _j++) {
             tile = layer[_j];
             if (tile >= 0) {
-              _ref5 = _this.getTileSlice(tile, frame), tilex = _ref5[0], tiley = _ref5[1], tileWidth = _ref5[2], tileHeight = _ref5[3];
-              _ref6 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref6[0], blitY = _ref6[1];
+              _ref6 = _this.getTileSlice(tile, frame), tilex = _ref6[0], tiley = _ref6[1], tileWidth = _ref6[2], tileHeight = _ref6[3];
+              _ref7 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref7[0], blitY = _ref7[1];
               context.drawImage(_this.tileset, tilex, tiley, tileWidth, tileHeight, blitX, blitY, tileWidth, tileHeight);
             }
             if (++mapx >= _this.loadedMap.width) {

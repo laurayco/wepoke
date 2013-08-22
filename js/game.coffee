@@ -98,7 +98,7 @@ class @OverworldEntity
 		if onLoad is null
 			onLoad = ()->null
 		@spriteClass = cls
-		@stepTimer = new RepeatingFunction 10, false, @advanceStep
+		@stepTimer = new RepeatingFunction 20, false, @advanceStep
 		OverworldSprite.loadSprite @spriteClass,(spr)=>
 			@sprite = spr
 			onLoad @sprite
@@ -171,6 +171,33 @@ class @OverworldSprite
 		@image = new Image()
 		@image.src = "overworld/#{@overworldClass}.png"
 		@image.onload = (event)=> cb @
+
+	calculateBlit:(x,y,frameStep,direction,tw,th)=>
+		[blitX,blitY] = [x*tw,y*th]
+		[spriteWidth,spriteHeight] = [parseInt(@image.width)/ 4,parseInt(@image.height)/3]
+		if @image.width > tw
+			blitX -= ((spriteWidth - tw ) / 2)
+		if spriteHeight > th
+			blitY -= (spriteHeight - th)
+		animationFrame = 0
+		frameStep -= 34
+		while frameStep > 0
+			animationFrame += 1
+			frameStep -= 34
+		if direction=='right'
+			blitX += Math.floor (animationFrame / 3.0 * tw)
+		else if direction == 'left'
+			blitX -= Math.floor (animationFrame / 3.0 * tw )
+		else if direction == 'up'
+			blitY -= Math.floor (animationFrame / 3.0 * th )
+		else if direction == 'down'
+			blitY += Math.floor (animationFrame / 3.0 * th )
+		return {
+			x:blitX
+			y:blitY
+			frame:animationFrame
+		}
+		
 
 	render:(context,x,y,direction,frameStep,tw,th)=>
 		# x / y = map position of sprite BEFORE frameStep is considered.
@@ -253,9 +280,10 @@ class @GamePlay
 			[playerSpriteWidth,playerSpriteHeight] = [16,32]
 			[playerPositionX,playerPositionY] = [save.position.x(),save.position.y()]
 			[cameraAdjustX,cameraAdjustY] = [@canvas.width/2,@canvas.height/2]
-			cameraAdjustX -= playerPositionX * @constructor.tileWidth#adjust for the player's x position
-			cameraAdjustY -= playerPositionY * @constructor.tileHeight#adjust for the player's y position
-			cameraAdjustX -= Math.abs (playerSpriteWidth - @constructor.tileWidth) / 2
+			[tileW,tileH]=[@constructor.tileWidth,@constructor.tileHeight]
+			playerPositionInfo = @heroEntity.sprite.calculateBlit @heroEntity.position.x(), @heroEntity.position.y(),@heroEntity.nextStepCompletion, @heroEntity.direction,tileW,tileH
+			cameraAdjustX -= playerPositionInfo.x
+			cameraAdjustY -= playerPositionInfo.y
 			context = @canvas.getContext "2d"
 			context.clearRect -cameraAdjustX, -cameraAdjustY, @canvas.width, @canvas.height
 			context.setTransform 1,0,0,1,cameraAdjustX,cameraAdjustY
