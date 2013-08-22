@@ -55,11 +55,11 @@ class OverworldControls
 				@overworldInterface.game.heroEntity.running = false
 
 		startMovement:(direction) =>
-			console.log "Moving:",@currentDirection = direction
+			@currentDirection = direction
 			@overworldInterface.game.heroEntity.startMoving @currentDirection
 
 		changeMovement:(direction) =>
-			console.log "New Direction:",@currentDirection = direction
+			@currentDirection = direction
 			@overworldInterface.game.heroEntity.changeDirection @currentDirection
 
 		endMovement:()=>
@@ -93,13 +93,14 @@ class @OverworldEntity
 	# then speedMultiplier will automatically go back to 1.0
 	nextStepCompletion:0#range between 0 and 100 as percentage.
 	running:false
-	_setSprite:(sprite)=>@sprite=sprite
+	stepTimer:null
 	constructor:(cls,onLoad=null)->
 		if onLoad is null
 			onLoad = ()->null
 		@spriteClass = cls
+		@stepTimer = new RepeatingFunction 100, false, @advanceStep
 		OverworldSprite.loadSprite @spriteClass,(spr)=>
-			@_setSprite spr
+			@sprite = spr
 			onLoad @sprite
 	render:(context,tw,th)=>
 		directionalMultiplier = 0
@@ -109,7 +110,8 @@ class @OverworldEntity
 		sf = Math.floor (@nextStepCompletion/100.0*directionalMultiplier)
 		@sprite.render context,@position.x(),@position.y(),@direction,sf,tw,th
 	startMoving:(direction)=>
-		console.log @direction = direction
+		@direction = direction
+		@stepTimer.resume()
 	changeDirection:(direction)=>
 		@direction = direction
 		@speedMultiplier = 1.0
@@ -120,14 +122,14 @@ class @OverworldEntity
 		else
 			@resetStep()
 	advanceStep:()=>
-		@getTargetPosition (targetPosition)=>
-			if targetPosition.x < 0
-				@resetStep()
-				@stopMoving()
-			if targetPosition.y < 0
-				@resetStep()
-				@stopMoving()
-		@nextStepCompletion += 10
+		#@getTargetPosition (targetPosition)=>
+		#	if targetPosition.x < 0
+		#		@resetStep()
+		#		@stopMoving()
+		#	if targetPosition.y < 0
+		#		@resetStep()
+		#		@stopMoving()
+		console.log @nextStepCompletion += 10
 	resetStep:()=>
 		@nextStepCompletion = 0
 	confirmStep:()=>
@@ -143,6 +145,7 @@ class @OverworldEntity
 	stopMoving:()=>
 		@roundStep()
 		@speedMultiplier = 1.0
+		@stepTimer.pause()
 
 class @HeroEntity extends OverworldEntity
 	constructor:(saveInfo,onLoad=null)->

@@ -101,12 +101,12 @@
       };
 
       MovementHandler.prototype.startMovement = function(direction) {
-        console.log("Moving:", this.currentDirection = direction);
+        this.currentDirection = direction;
         return this.overworldInterface.game.heroEntity.startMoving(this.currentDirection);
       };
 
       MovementHandler.prototype.changeMovement = function(direction) {
-        console.log("New Direction:", this.currentDirection = direction);
+        this.currentDirection = direction;
         return this.overworldInterface.game.heroEntity.changeDirection(this.currentDirection);
       };
 
@@ -167,9 +167,7 @@
 
     OverworldEntity.prototype.running = false;
 
-    OverworldEntity.prototype._setSprite = function(sprite) {
-      return this.sprite = sprite;
-    };
+    OverworldEntity.prototype.stepTimer = null;
 
     function OverworldEntity(cls, onLoad) {
       var _this = this;
@@ -184,15 +182,15 @@
       this.changeDirection = __bind(this.changeDirection, this);
       this.startMoving = __bind(this.startMoving, this);
       this.render = __bind(this.render, this);
-      this._setSprite = __bind(this._setSprite, this);
       if (onLoad === null) {
         onLoad = function() {
           return null;
         };
       }
       this.spriteClass = cls;
+      this.stepTimer = new RepeatingFunction(100, false, this.advanceStep);
       OverworldSprite.loadSprite(this.spriteClass, function(spr) {
-        _this._setSprite(spr);
+        _this.sprite = spr;
         return onLoad(_this.sprite);
       });
     }
@@ -215,7 +213,8 @@
     };
 
     OverworldEntity.prototype.startMoving = function(direction) {
-      return console.log(this.direction = direction);
+      this.direction = direction;
+      return this.stepTimer.resume();
     };
 
     OverworldEntity.prototype.changeDirection = function(direction) {
@@ -233,18 +232,7 @@
     };
 
     OverworldEntity.prototype.advanceStep = function() {
-      var _this = this;
-      this.getTargetPosition(function(targetPosition) {
-        if (targetPosition.x < 0) {
-          _this.resetStep();
-          _this.stopMoving();
-        }
-        if (targetPosition.y < 0) {
-          _this.resetStep();
-          return _this.stopMoving();
-        }
-      });
-      return this.nextStepCompletion += 10;
+      return console.log(this.nextStepCompletion += 10);
     };
 
     OverworldEntity.prototype.resetStep = function() {
@@ -266,7 +254,8 @@
 
     OverworldEntity.prototype.stopMoving = function() {
       this.roundStep();
-      return this.speedMultiplier = 1.0;
+      this.speedMultiplier = 1.0;
+      return this.stepTimer.pause();
     };
 
     return OverworldEntity;
