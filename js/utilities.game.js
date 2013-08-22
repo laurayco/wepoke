@@ -3,11 +3,13 @@
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   this.RepeatingFunction = (function() {
+    RepeatingFunction.prototype.handle = null;
+
     function RepeatingFunction(frequency, immediate, callback) {
-      this.frequency = frequency;
-      this.callback = callback;
       this.resume = __bind(this.resume, this);
       this.pause = __bind(this.pause, this);
+      this.frequency = frequency;
+      this.callback = callback;
       if (immediate) {
         this.resume();
       }
@@ -19,7 +21,7 @@
     };
 
     RepeatingFunction.prototype.resume = function() {
-      return this.handle = setInterval(this.frequency, this.callback);
+      return this.handle = setInterval(this.callback, this.frequency);
     };
 
     return RepeatingFunction;

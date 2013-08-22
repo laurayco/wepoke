@@ -1,9 +1,12 @@
 class @RepeatingFunction
-	constructor:(@frequency,immediate,@callback)->
+	handle:null
+	constructor:(frequency,immediate,callback)->
+		@frequency = frequency
+		@callback = callback
 		if immediate
 			@resume()
 	pause:()=>
 		clearInterval @handle
 		@handle = null
 	resume:()=>
-		@handle = setInterval @frequency,@callback
+		@handle = setInterval @callback,@frequency

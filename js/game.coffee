@@ -98,17 +98,12 @@ class @OverworldEntity
 		if onLoad is null
 			onLoad = ()->null
 		@spriteClass = cls
-		@stepTimer = new RepeatingFunction 100, false, @advanceStep
+		@stepTimer = new RepeatingFunction 10, false, @advanceStep
 		OverworldSprite.loadSprite @spriteClass,(spr)=>
 			@sprite = spr
 			onLoad @sprite
 	render:(context,tw,th)=>
-		directionalMultiplier = 0
-		if @nextStepCompletion > 0
-			directionalMultiplier = {'left':tw,'right':tw,'up':th,'down',th}
-			directionalMultiplier = directionalMultiplier[@direction]
-		sf = Math.floor (@nextStepCompletion/100.0*directionalMultiplier)
-		@sprite.render context,@position.x(),@position.y(),@direction,sf,tw,th
+		@sprite.render context,@position.x(),@position.y(),@direction,@nextStepCompletion,tw,th
 	startMoving:(direction)=>
 		@direction = direction
 		@stepTimer.resume()
@@ -129,19 +124,26 @@ class @OverworldEntity
 		#	if targetPosition.y < 0
 		#		@resetStep()
 		#		@stopMoving()
-		console.log @nextStepCompletion += 10
+		@nextStepCompletion += 10
+		if @nextStepCompletion >= 100
+			@confirmStep()
 	resetStep:()=>
 		@nextStepCompletion = 0
 	confirmStep:()=>
-		if direction=='left'
-			position.x position.x()-1
-		else if direction=='right'
-			position.x position.x()+1
-		else if direction=='up'
-			position.y position.y()-1
-		else if direction=='down'
-			position.y position.y()+1
-		resetStep()
+		if @direction=='left'
+			@position.x @position.x()-1
+		else if @direction=='right'
+			@position.x @position.x()+1
+		else if @direction=='up'
+			@position.y @position.y()-1
+		else if @direction=='down'
+			@position.y @position.y()+1
+		@resetStep()
+		#directionalMultiplier = 0
+		#if @nextStepCompletion > 0
+		#	directionalMultiplier = {'left':tw,'right':tw,'up':th,'down',th}
+		#	directionalMultiplier = directionalMultiplier[@direction]
+		#sf = Math.floor (@nextStepCompletion/100.0*directionalMultiplier)
 	stopMoving:()=>
 		@roundStep()
 		@speedMultiplier = 1.0
@@ -181,12 +183,19 @@ class @OverworldSprite
 			blitX -= ((spriteWidth - tw ) / 2)
 		if spriteHeight > th
 			blitY -= (spriteHeight - th)
-		blitX += Math.floor (frameStep / 3.0 * tw)
 		animationFrame = 0
 		frameStep -= 34
 		while frameStep > 0
 			animationFrame += 1
 			frameStep -= 34
+		if direction=='right'
+			blitX += Math.floor (animationFrame / 3.0 * tw)
+		else if direction == 'left'
+			blitX -= Math.floor (animationFrame / 3.0 * tw )
+		else if direction == 'up'
+			blitY -= Math.floor (animationFrame / 3.0 * th )
+		else if direction == 'down'
+			blitY += Math.floor (animationFrame / 3.0 * th )
 		frames =
 			"down":0
 			"up":1
@@ -244,7 +253,6 @@ class @GamePlay
 			[playerSpriteWidth,playerSpriteHeight] = [16,32]
 			[playerPositionX,playerPositionY] = [save.position.x(),save.position.y()]
 			[width,height]=[16,16]
-			[boundsW,boundsH]=[@canvas.width-width,@canvas.height-height]
 			[xpos,ypos] = [(Number.random boundsW),(Number.random boundsH)]
 			[cameraAdjustX,cameraAdjustY] = [@canvas.width/2,@canvas.height/2]
 			cameraAdjustX -= playerPositionX * width#adjust for the player's x position

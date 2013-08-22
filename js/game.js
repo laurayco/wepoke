@@ -188,7 +188,7 @@
         };
       }
       this.spriteClass = cls;
-      this.stepTimer = new RepeatingFunction(100, false, this.advanceStep);
+      this.stepTimer = new RepeatingFunction(10, false, this.advanceStep);
       OverworldSprite.loadSprite(this.spriteClass, function(spr) {
         _this.sprite = spr;
         return onLoad(_this.sprite);
@@ -196,20 +196,7 @@
     }
 
     OverworldEntity.prototype.render = function(context, tw, th) {
-      var directionalMultiplier, sf;
-      directionalMultiplier = 0;
-      if (this.nextStepCompletion > 0) {
-        directionalMultiplier = {
-          'left': tw,
-          'right': tw,
-          'up': th,
-          'down': 'down',
-          th: th
-        };
-        directionalMultiplier = directionalMultiplier[this.direction];
-      }
-      sf = Math.floor(this.nextStepCompletion / 100.0 * directionalMultiplier);
-      return this.sprite.render(context, this.position.x(), this.position.y(), this.direction, sf, tw, th);
+      return this.sprite.render(context, this.position.x(), this.position.y(), this.direction, this.nextStepCompletion, tw, th);
     };
 
     OverworldEntity.prototype.startMoving = function(direction) {
@@ -232,7 +219,10 @@
     };
 
     OverworldEntity.prototype.advanceStep = function() {
-      return console.log(this.nextStepCompletion += 10);
+      this.nextStepCompletion += 10;
+      if (this.nextStepCompletion >= 100) {
+        return this.confirmStep();
+      }
     };
 
     OverworldEntity.prototype.resetStep = function() {
@@ -240,16 +230,16 @@
     };
 
     OverworldEntity.prototype.confirmStep = function() {
-      if (direction === 'left') {
-        position.x(position.x() - 1);
-      } else if (direction === 'right') {
-        position.x(position.x() + 1);
-      } else if (direction === 'up') {
-        position.y(position.y() - 1);
-      } else if (direction === 'down') {
-        position.y(position.y() + 1);
+      if (this.direction === 'left') {
+        this.position.x(this.position.x() - 1);
+      } else if (this.direction === 'right') {
+        this.position.x(this.position.x() + 1);
+      } else if (this.direction === 'up') {
+        this.position.y(this.position.y() - 1);
+      } else if (this.direction === 'down') {
+        this.position.y(this.position.y() + 1);
       }
-      return resetStep();
+      return this.resetStep();
     };
 
     OverworldEntity.prototype.stopMoving = function() {
@@ -317,12 +307,20 @@
       if (spriteHeight > th) {
         blitY -= spriteHeight - th;
       }
-      blitX += Math.floor(frameStep / 3.0 * tw);
       animationFrame = 0;
       frameStep -= 34;
       while (frameStep > 0) {
         animationFrame += 1;
         frameStep -= 34;
+      }
+      if (direction === 'right') {
+        blitX += Math.floor(animationFrame / 3.0 * tw);
+      } else if (direction === 'left') {
+        blitX -= Math.floor(animationFrame / 3.0 * tw);
+      } else if (direction === 'up') {
+        blitY -= Math.floor(animationFrame / 3.0 * th);
+      } else if (direction === 'down') {
+        blitY += Math.floor(animationFrame / 3.0 * th);
       }
       frames = {
         "down": 0,
@@ -415,13 +413,12 @@
     GamePlay.prototype.frame = function() {
       var _this = this;
       return this.getSave(function(save) {
-        var blitX, blitY, boundsH, boundsW, cameraAdjustX, cameraAdjustY, context, frame, height, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, width, xpos, ypos, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+        var blitX, blitY, cameraAdjustX, cameraAdjustY, context, frame, height, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, width, xpos, ypos, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8;
         _ref = [16, 32], playerSpriteWidth = _ref[0], playerSpriteHeight = _ref[1];
         _ref1 = [save.position.x(), save.position.y()], playerPositionX = _ref1[0], playerPositionY = _ref1[1];
         _ref2 = [16, 16], width = _ref2[0], height = _ref2[1];
-        _ref3 = [_this.canvas.width - width, _this.canvas.height - height], boundsW = _ref3[0], boundsH = _ref3[1];
-        _ref4 = [Number.random(boundsW), Number.random(boundsH)], xpos = _ref4[0], ypos = _ref4[1];
-        _ref5 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref5[0], cameraAdjustY = _ref5[1];
+        _ref3 = [Number.random(boundsW), Number.random(boundsH)], xpos = _ref3[0], ypos = _ref3[1];
+        _ref4 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref4[0], cameraAdjustY = _ref4[1];
         cameraAdjustX -= playerPositionX * width;
         cameraAdjustY -= playerPositionY * height;
         cameraAdjustX -= Math.abs((playerSpriteWidth - width) / 2);
@@ -429,15 +426,15 @@
         context.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
         context.setTransform(1, 0, 0, 1, cameraAdjustX, cameraAdjustY);
         frame = 0;
-        _ref6 = _this.loadedMap.layers;
-        for (_i = 0, _len = _ref6.length; _i < _len; _i++) {
-          layer = _ref6[_i];
-          _ref7 = [0, 0], mapx = _ref7[0], mapy = _ref7[1];
+        _ref5 = _this.loadedMap.layers;
+        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
+          layer = _ref5[_i];
+          _ref6 = [0, 0], mapx = _ref6[0], mapy = _ref6[1];
           for (_j = 0, _len1 = layer.length; _j < _len1; _j++) {
             tile = layer[_j];
             if (tile >= 0) {
-              _ref8 = _this.getTileSlice(tile, frame), tilex = _ref8[0], tiley = _ref8[1], tileWidth = _ref8[2], tileHeight = _ref8[3];
-              _ref9 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref9[0], blitY = _ref9[1];
+              _ref7 = _this.getTileSlice(tile, frame), tilex = _ref7[0], tiley = _ref7[1], tileWidth = _ref7[2], tileHeight = _ref7[3];
+              _ref8 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref8[0], blitY = _ref8[1];
               context.drawImage(_this.tileset, tilex, tiley, tileWidth, tileHeight, blitX, blitY, tileWidth, tileHeight);
             }
             if (++mapx >= _this.loadedMap.width) {
