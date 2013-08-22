@@ -252,14 +252,12 @@ class @GamePlay
 		@getSave (save)=>
 			[playerSpriteWidth,playerSpriteHeight] = [16,32]
 			[playerPositionX,playerPositionY] = [save.position.x(),save.position.y()]
-			[width,height]=[16,16]
-			[xpos,ypos] = [(Number.random boundsW),(Number.random boundsH)]
 			[cameraAdjustX,cameraAdjustY] = [@canvas.width/2,@canvas.height/2]
-			cameraAdjustX -= playerPositionX * width#adjust for the player's x position
-			cameraAdjustY -= playerPositionY * height#adjust for the player's y position
-			cameraAdjustX -= Math.abs (playerSpriteWidth - width) / 2
+			cameraAdjustX -= playerPositionX * @constructor.tileWidth#adjust for the player's x position
+			cameraAdjustY -= playerPositionY * @constructor.tileHeight#adjust for the player's y position
+			cameraAdjustX -= Math.abs (playerSpriteWidth - @constructor.tileWidth) / 2
 			context = @canvas.getContext "2d"
-			context.clearRect 0,0, @canvas.width, @canvas.height
+			context.clearRect -cameraAdjustX, -cameraAdjustY, @canvas.width, @canvas.height
 			context.setTransform 1,0,0,1,cameraAdjustX,cameraAdjustY
 			frame = 0
 			for layer in @loadedMap.layers

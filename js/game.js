@@ -413,28 +413,26 @@
     GamePlay.prototype.frame = function() {
       var _this = this;
       return this.getSave(function(save) {
-        var blitX, blitY, cameraAdjustX, cameraAdjustY, context, frame, height, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, width, xpos, ypos, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8;
+        var blitX, blitY, cameraAdjustX, cameraAdjustY, context, frame, layer, mapx, mapy, playerPositionX, playerPositionY, playerSpriteHeight, playerSpriteWidth, tile, tileHeight, tileWidth, tilex, tiley, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
         _ref = [16, 32], playerSpriteWidth = _ref[0], playerSpriteHeight = _ref[1];
         _ref1 = [save.position.x(), save.position.y()], playerPositionX = _ref1[0], playerPositionY = _ref1[1];
-        _ref2 = [16, 16], width = _ref2[0], height = _ref2[1];
-        _ref3 = [Number.random(boundsW), Number.random(boundsH)], xpos = _ref3[0], ypos = _ref3[1];
-        _ref4 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref4[0], cameraAdjustY = _ref4[1];
-        cameraAdjustX -= playerPositionX * width;
-        cameraAdjustY -= playerPositionY * height;
-        cameraAdjustX -= Math.abs((playerSpriteWidth - width) / 2);
+        _ref2 = [_this.canvas.width / 2, _this.canvas.height / 2], cameraAdjustX = _ref2[0], cameraAdjustY = _ref2[1];
+        cameraAdjustX -= playerPositionX * _this.constructor.tileWidth;
+        cameraAdjustY -= playerPositionY * _this.constructor.tileHeight;
+        cameraAdjustX -= Math.abs((playerSpriteWidth - _this.constructor.tileWidth) / 2);
         context = _this.canvas.getContext("2d");
-        context.clearRect(0, 0, _this.canvas.width, _this.canvas.height);
+        context.clearRect(-cameraAdjustX, -cameraAdjustY, _this.canvas.width, _this.canvas.height);
         context.setTransform(1, 0, 0, 1, cameraAdjustX, cameraAdjustY);
         frame = 0;
-        _ref5 = _this.loadedMap.layers;
-        for (_i = 0, _len = _ref5.length; _i < _len; _i++) {
-          layer = _ref5[_i];
-          _ref6 = [0, 0], mapx = _ref6[0], mapy = _ref6[1];
+        _ref3 = _this.loadedMap.layers;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          layer = _ref3[_i];
+          _ref4 = [0, 0], mapx = _ref4[0], mapy = _ref4[1];
           for (_j = 0, _len1 = layer.length; _j < _len1; _j++) {
             tile = layer[_j];
             if (tile >= 0) {
-              _ref7 = _this.getTileSlice(tile, frame), tilex = _ref7[0], tiley = _ref7[1], tileWidth = _ref7[2], tileHeight = _ref7[3];
-              _ref8 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref8[0], blitY = _ref8[1];
+              _ref5 = _this.getTileSlice(tile, frame), tilex = _ref5[0], tiley = _ref5[1], tileWidth = _ref5[2], tileHeight = _ref5[3];
+              _ref6 = [mapx * tileWidth, mapy * tileHeight], blitX = _ref6[0], blitY = _ref6[1];
               context.drawImage(_this.tileset, tilex, tiley, tileWidth, tileHeight, blitX, blitY, tileWidth, tileHeight);
             }
             if (++mapx >= _this.loadedMap.width) {
