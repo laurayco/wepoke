@@ -169,7 +169,7 @@
 
     OverworldEntity.prototype.stepTimer = null;
 
-    function OverworldEntity(cls, onLoad) {
+    function OverworldEntity(cls, mapObject, onLoad) {
       var _this = this;
       if (onLoad == null) {
         onLoad = null;
@@ -178,6 +178,7 @@
       this.confirmStep = __bind(this.confirmStep, this);
       this.resetStep = __bind(this.resetStep, this);
       this.advanceStep = __bind(this.advanceStep, this);
+      this.getTargetPosition = __bind(this.getTargetPosition, this);
       this.roundStep = __bind(this.roundStep, this);
       this.changeDirection = __bind(this.changeDirection, this);
       this.startMoving = __bind(this.startMoving, this);
@@ -189,6 +190,7 @@
       }
       this.spriteClass = cls;
       this.stepTimer = new RepeatingFunction(20, false, this.advanceStep);
+      this.mapObject = mapObject;
       OverworldSprite.loadSprite(this.spriteClass, function(spr) {
         _this.sprite = spr;
         return onLoad(_this.sprite);
@@ -218,7 +220,40 @@
       }
     };
 
+    OverworldEntity.prototype.getTargetPosition = function(cb) {
+      var basePosition;
+      basePosition = {
+        x: this.position.x(),
+        y: this.position.y()
+      };
+      if (this.direction === 'up') {
+        basePosition.y--;
+      } else if (this.direction === 'down') {
+        basePosition.y++;
+      } else if (this.direction === 'left') {
+        basePosition.x--;
+      } else if (this.direction === 'right') {
+        basePosition.x++;
+      }
+      return cb(basePosition);
+    };
+
     OverworldEntity.prototype.advanceStep = function() {
+      var _this = this;
+      this.getTargetPosition(function(targetPosition) {
+        var stopMoving;
+        stopMoving = function(b) {
+          if (b) {
+            _this.resetStep();
+            return _this.stopMoving();
+          }
+        };
+        stopMoving(targetPosition.x < 0);
+        stopMoving(targetPosition.x < 0);
+        stopMoving(targetPosition.y < 0);
+        stopMoving(targetPosition.x >= _this.mapObject.width);
+        return stopMoving(targetPosition.y >= _this.mapObject.layers[0].length / _this.mapObject.width);
+      });
       this.nextStepCompletion += 10;
       if (this.nextStepCompletion >= 100) {
         return this.confirmStep();
@@ -255,7 +290,7 @@
   this.HeroEntity = (function(_super) {
     __extends(HeroEntity, _super);
 
-    function HeroEntity(saveInfo, onLoad) {
+    function HeroEntity(saveInfo, mapObject, onLoad) {
       if (onLoad == null) {
         onLoad = null;
       }
@@ -264,7 +299,7 @@
           return null;
         };
       }
-      HeroEntity.__super__.constructor.call(this, "hero_" + saveInfo.gender, onLoad);
+      HeroEntity.__super__.constructor.call(this, "hero_" + saveInfo.gender, mapObject, onLoad);
       this.saveInfo = saveInfo;
       this.position = this.saveInfo.position;
     }
@@ -425,18 +460,15 @@
       };
       if (!checkBack()) {
         if (!mapLoaded) {
-          this["interface"].loadMap(1, function(mapObject, tileset) {
+          return this["interface"].loadMap(1, function(mapObject, tileset) {
             _this.loadedMap = mapObject;
             _this.tileset = tileset;
             mapLoaded = true;
-            return checkBack();
-          });
-        }
-        if (!playerLoaded) {
-          return this.getSave(function(saveInfo) {
-            return _this.heroEntity = new HeroEntity(saveInfo, function() {
-              playerLoaded = true;
-              return checkBack();
+            return _this.getSave(function(saveInfo) {
+              return _this.heroEntity = new HeroEntity(saveInfo, _this.loadedMap, function() {
+                playerLoaded = true;
+                return checkBack();
+              });
             });
           });
         }

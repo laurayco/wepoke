@@ -216,4 +216,5 @@ pip-log.txt
 
 js/main.js
 js/game.js
+js/utilities.game.js
 js/input.game.js

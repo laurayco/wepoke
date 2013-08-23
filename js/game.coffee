@@ -94,11 +94,12 @@ class @OverworldEntity
 	nextStepCompletion:0#range between 0 and 100 as percentage.
 	running:false
 	stepTimer:null
-	constructor:(cls,onLoad=null)->
+	constructor:(cls,mapObject,onLoad=null)->
 		if onLoad is null
 			onLoad = ()->null
 		@spriteClass = cls
 		@stepTimer = new RepeatingFunction 20, false, @advanceStep
+		@mapObject = mapObject
 		OverworldSprite.loadSprite @spriteClass,(spr)=>
 			@sprite = spr
 			onLoad @sprite
@@ -116,14 +117,28 @@ class @OverworldEntity
 			@confirmStep()
 		else
 			@resetStep()
+	getTargetPosition:(cb)=>
+		basePosition = {x:@position.x(),y:@position.y()}
+		if @direction == 'up'
+			basePosition.y--
+		else if @direction == 'down'
+			basePosition.y++
+		else if @direction == 'left'
+			basePosition.x--
+		else if @direction == 'right'
+			basePosition.x++
+		cb basePosition
 	advanceStep:()=>
-		#@getTargetPosition (targetPosition)=>
-		#	if targetPosition.x < 0
-		#		@resetStep()
-		#		@stopMoving()
-		#	if targetPosition.y < 0
-		#		@resetStep()
-		#		@stopMoving()
+		@getTargetPosition (targetPosition)=>
+			stopMoving=(b)=>
+				if b
+					@resetStep()
+					@stopMoving()
+			stopMoving targetPosition.x < 0
+			stopMoving targetPosition.x < 0
+			stopMoving targetPosition.y < 0
+			stopMoving targetPosition.x >= @mapObject.width
+			stopMoving targetPosition.y >= @mapObject.layers[0].length / @mapObject.width
 		@nextStepCompletion += 10
 		if @nextStepCompletion >= 100
 			@confirmStep()
@@ -139,21 +154,16 @@ class @OverworldEntity
 		else if @direction=='down'
 			@position.y @position.y()+1
 		@resetStep()
-		#directionalMultiplier = 0
-		#if @nextStepCompletion > 0
-		#	directionalMultiplier = {'left':tw,'right':tw,'up':th,'down',th}
-		#	directionalMultiplier = directionalMultiplier[@direction]
-		#sf = Math.floor (@nextStepCompletion/100.0*directionalMultiplier)
 	stopMoving:()=>
 		@roundStep()
 		@speedMultiplier = 1.0
 		@stepTimer.pause()
 
 class @HeroEntity extends OverworldEntity
-	constructor:(saveInfo,onLoad=null)->
+	constructor:(saveInfo,mapObject, onLoad=null)->
 		if onLoad is null
 			onLoad = ()->null
-		super "hero_#{saveInfo.gender}", onLoad
+		super "hero_#{saveInfo.gender}", mapObject, onLoad
 		@saveInfo = saveInfo
 		@position = @saveInfo.position
 
@@ -267,12 +277,10 @@ class @GamePlay
 					@loadedMap = mapObject
 					@tileset = tileset
 					mapLoaded = true
-					checkBack()
-			if not playerLoaded
-				@getSave (saveInfo)=>
-					@heroEntity = new HeroEntity saveInfo,()=>
-						playerLoaded = true
-						checkBack()
+					@getSave (saveInfo)=>
+						@heroEntity = new HeroEntity saveInfo, @loadedMap, ()=>
+							playerLoaded = true
+							checkBack()
 
 	frame:=>
 		#do things per-frame here. yup.
