@@ -85,6 +85,8 @@ class @OverworldEntity
 	position:
 		x:ko.observable 0
 		y:ko.observable 0
+		z:ko.observable 0
+		direction:"down"
 	sprite:null
 	direction:"down"
 	speedMultiplier:1.0#if you start running, this will slowly progress towards
@@ -104,12 +106,12 @@ class @OverworldEntity
 			@sprite = spr
 			onLoad @sprite
 	render:(context,tw,th)=>
-		@sprite.render context,@position.x(),@position.y(),@direction,@nextStepCompletion,tw,th
+		@sprite.render context,@position.x,@position.y,@position.direction,@nextStepCompletion,tw,th
 	startMoving:(direction)=>
-		@direction = direction
+		@position.direction = direction
 		@stepTimer.resume()
 	changeDirection:(direction)=>
-		@direction = direction
+		@position.direction = direction
 		@speedMultiplier = 1.0
 		@roundStep()
 	roundStep:()=>
@@ -118,14 +120,14 @@ class @OverworldEntity
 		else
 			@resetStep()
 	getTargetPosition:(cb)=>
-		basePosition = {x:@position.x(),y:@position.y()}
-		if @direction == 'up'
+		basePosition = {x:@position.x,y:@position.y}
+		if @position.direction == 'up'
 			basePosition.y--
-		else if @direction == 'down'
+		else if @position.direction == 'down'
 			basePosition.y++
-		else if @direction == 'left'
+		else if @position.direction == 'left'
 			basePosition.x--
-		else if @direction == 'right'
+		else if @position.direction == 'right'
 			basePosition.x++
 		cb basePosition
 	advanceStep:()=>
@@ -145,14 +147,14 @@ class @OverworldEntity
 	resetStep:()=>
 		@nextStepCompletion = 0
 	confirmStep:()=>
-		if @direction=='left'
-			@position.x @position.x()-1
-		else if @direction=='right'
-			@position.x @position.x()+1
-		else if @direction=='up'
-			@position.y @position.y()-1
-		else if @direction=='down'
-			@position.y @position.y()+1
+		if @position.direction=='left'
+			@position.x--
+		else if @position.direction=='right'
+			@position.x++
+		else if @position.direction=='up'
+			@position.y--
+		else if @position.direction=='down'
+			@position.y++
 		@resetStep()
 	stopMoving:()=>
 		@roundStep()
@@ -286,10 +288,10 @@ class @GamePlay
 		#do things per-frame here. yup.
 		@getSave (save)=>
 			[playerSpriteWidth,playerSpriteHeight] = [16,32]
-			[playerPositionX,playerPositionY] = [save.position.x(),save.position.y()]
+			[playerPositionX,playerPositionY] = [save.position.x,save.position.y]
 			[cameraAdjustX,cameraAdjustY] = [@canvas.width/2,@canvas.height/2]
 			[tileW,tileH]=[@constructor.tileWidth,@constructor.tileHeight]
-			playerPositionInfo = @heroEntity.sprite.calculateBlit @heroEntity.position.x(), @heroEntity.position.y(),@heroEntity.nextStepCompletion, @heroEntity.direction,tileW,tileH
+			playerPositionInfo = @heroEntity.sprite.calculateBlit @heroEntity.position.x, @heroEntity.position.y,@heroEntity.nextStepCompletion, @heroEntity.position.direction,tileW,tileH
 			cameraAdjustX -= playerPositionInfo.x
 			cameraAdjustY -= playerPositionInfo.y
 			context = @canvas.getContext "2d"
@@ -308,16 +310,6 @@ class @GamePlay
 						mapx=0
 			@drawOverworlds context
 			@requestFrame @frame
-			null
-
-	startPlayerMovement:(direction)=>
-		null
-
-	endPlayerMovement:()=>
-		null
-
-	changePlayerMovement:(direction)=>
-		null
 
 	drawOverworlds:(context)=>
 		for ow in @getOverworlds true
