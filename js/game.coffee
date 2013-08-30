@@ -257,11 +257,13 @@ class @GamePlay
 	getSave:(cb)=>cb @interface.currentSave()
 
 	loadedMap:null
+	runningScript:null
 	tileset:null
 	heroEntity:null
 
 	play:=>
 		allowPlay = ()=>
+			@interface.gameMode "exploring"
 			@running = true
 			@overworldResponse.enable()
 			@requestFrame @frame
@@ -275,14 +277,19 @@ class @GamePlay
 				false
 		if not checkBack()
 			if not mapLoaded
-				@interface.loadMap 1,(mapObject,tileset)=>
-					@loadedMap = mapObject
-					@tileset = tileset
-					mapLoaded = true
-					@getSave (saveInfo)=>
-						@heroEntity = new HeroEntity saveInfo, @loadedMap, ()=>
-							playerLoaded = true
-							checkBack()
+				@interface.gameMode "loading"
+				@interface.database.getMap 1,(mapObject,errors)=>
+					if mapObject != null
+						@loadedMap = mapObject
+						tileset = new Image()
+						tileset.src = "tileset/#{mapObject.tileset}.png"
+						tileset.onload = (event)=>
+							@tileset = tileset
+							mapLoaded = true
+							@getSave (saveInfo)=>
+								@heroEntity = new HeroEntity saveInfo, @loadedMap, ()=>
+									playerLoaded = true
+									checkBack()
 
 	frame:=>
 		#do things per-frame here. yup.

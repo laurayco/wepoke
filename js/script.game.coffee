@@ -1,6 +1,32 @@
 class @ScriptCommand
-	parameters:{}
-	name:"nop"
+	@parameters:{}
+	@name:"nop"
+	constructor:(parameters)->
+		reqd = (param for param,v in @constructor.parameters if v.required)
+		for req in reqd
+			if not req of parameters
+				throw 
+					message:"Not all of your required parameters are there."
+		@parameters = Object.merge @constructor.parameters, parameters, true
+	startCommand:(hero,map,iface)=>
+		@finishCommand hero, map, iface
+	finishCommand:(hero,map,iface)=>
+		iface.advance hero, map
+
+class @MessageCommand extends ScriptCommand
+	@parameters:
+		image:
+			default:null
+			optional:true
+		message:
+			default:null
+			optional:false
+		type:
+			default:"statement"
+			optional:true
+	@name:"msg"
+	startCommand:
+		iface.messages.push new MessageLog @parameters
 
 class @CommandChain
 	constructor:(builtScript)->

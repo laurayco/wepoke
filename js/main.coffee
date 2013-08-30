@@ -4,6 +4,11 @@ openUrl = ( url, method='GET')->
 	req.open(method,url,true)
 	req
 
+class LogMessage
+	constructor:(opts)->
+		@messageType = opts.messageType
+		@duration = opts.duration ? 3000
+
 class @GameLoader
 
 	constructor:(opts)->
@@ -84,21 +89,6 @@ class @GameLoader
 			direction:"down"
 		variables:{}
 		flags:[]
-
-	loadMap:(mapID,callback)=>
-		[running,oldMode] = [@game.running,@gameMode()]
-		@gameMode "loading"
-		if running
-			@game.pause
-		@database.getMap mapID,(mapObject,errors)=>
-			if mapObject!=null
-				@gameMode oldMode
-				if running
-					@game.play
-				tileset = new Image()
-				tileset.src = "tileset/#{mapObject.tileset}.png"
-				tileset.onload = (event)->
-					callback mapObject,tileset
 
 	prepare:=>
 		@database.prepare (errors)=>
