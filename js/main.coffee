@@ -4,16 +4,18 @@ openUrl = ( url, method='GET')->
 	req.open(method,url,true)
 	req
 
-class LogMessage
+class @LogMessage
 	constructor:(opts)->
 		@messageType = opts.messageType
 		@duration = opts.duration ? 3000
+		@message = opts.message
 
 class @GameLoader
 
 	constructor:(opts)->
 		@canvas = opts.gameCanvas
 		@game = null
+		@messageLog = ko.observableArray()
 		@currentSave = ko.observable(null)
 		@currentSave.subscribe (saveObject)=>
 			if saveObject != null and @game == null

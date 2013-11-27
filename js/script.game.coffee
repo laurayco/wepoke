@@ -1,6 +1,7 @@
 class @ScriptCommand
 	@parameters:{}
 	@name:"nop"
+	_end:()->null
 	constructor:(parameters)->
 		reqd = (param for param,v in @constructor.parameters if v.required)
 		for req in reqd
@@ -8,12 +9,14 @@ class @ScriptCommand
 				throw 
 					message:"Not all of your required parameters are there."
 		@parameters = Object.merge @constructor.parameters, parameters, true
+		@_end = null
+	end:(cb)=>@_end = cb
 	startCommand:(hero,map,iface)=>
 		@finishCommand hero, map, iface
-	finishCommand:(hero,map,iface)=>
-		iface.advance hero, map
+	finishCommand:()=>@_end hero, map
 
 class @MessageCommand extends ScriptCommand
+	constructor:(paramaters)->super paramaters
 	@parameters:
 		image:
 			default:null
@@ -25,17 +28,21 @@ class @MessageCommand extends ScriptCommand
 			default:"statement"
 			optional:true
 	@name:"msg"
-	startCommand:
+	startCommand:(hero,map,iface)=>
 		iface.messages.push new MessageLog @parameters
 
 class @CommandChain
-	constructor:(builtScript)->
+	constructor:(builtScript,hero,map,interface)->
 		@build = builtScript
 		@_currentCommand = 0
+		@hero = hero
+		@map = map
+		@interface = interface
 	advance:()=>
 		@_currentCommand++
-		@currentCommand().start()
-		@currentCommand().end @advance
+		@currentCommand().start @hero, @map, @interface
+		if @_currentCommand < @build.commands.length - 1
+			@currentCommand().end @advance
 	currentCommand:()=>return @build.commands[@_currentCommand]
 
 class @ScriptParser

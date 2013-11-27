@@ -1,0 +1,12 @@
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="4">
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Normal Text" encoding="-1" filename="C:\Users\Tyler\Desktop\wepoke\js\game.coffee" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Normal Text" encoding="-1" filename="C:\Users\Tyler\Desktop\wepoke\js\input.game.coffee" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Normal Text" encoding="-1" filename="C:\Users\Tyler\Desktop\wepoke\js\main.coffee" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1" startPos="0" endPos="0" selMode="0" lang="Normal Text" encoding="-1" filename="C:\Users\Tyler\Desktop\wepoke\js\script.game.coffee" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="400" startPos="0" endPos="0" selMode="0" lang="Normal Text" encoding="-1" filename="C:\Users\Tyler\Desktop\wepoke\js\utilities.game.coffee" />
+        </mainView>
+        <subView activeIndex="0" />
+    </Session>
+</NotepadPlus>
