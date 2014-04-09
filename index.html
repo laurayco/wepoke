@@ -2,31 +2,67 @@
 
 <html>
     <head>
-		<script type='text/javascript'>
-				window.requestAnimFrame = (function(){
-					return  window.requestAnimationFrame   || 
-						window.webkitRequestAnimationFrame || 
-						window.mozRequestAnimationFrame    || 
-						window.oRequestAnimationFrame      || 
-						window.msRequestAnimationFrame     ||  
-						null
-				})();
-				window.cancelRequestAnimFrame = ( function() {
-					return window.cancelAnimationFrame          ||
-						window.webkitCancelRequestAnimationFrame    ||
-						window.mozCancelRequestAnimationFrame       ||
-						window.oCancelRequestAnimationFrame     ||
-						window.msCancelRequestAnimationFrame        ||
-						null
-				} )();
-		</script>
-        <script type='text/javascript' src='js/sugar.js'></script>
-        <link href="/img/favicon.ico" rel="icon" type="image/x-icon" />
-        <link href="/css/metro-bootstrap.css" rel="style" type="text/css" />
-        <link href="/css/metro-bootstrap-responsive.css" rel="style" type="text/css" />
-        <meta name="viewport" content="initial-scale=1, maximum-scale=1">
         <title>WePoke!</title>
+        <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+        <link href="/img/favicon.ico" rel="icon" type="image/x-icon" />
+    	<link href="/css/iconFont.css" rel="stylesheet" type="text/css" />
+        <link href="/css/metro-bootstrap.css" rel="stylesheet" type="text/css" />
+        <link href="/css/metro-bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+		<script type='text/javascript' src='js/animation_request_shim.js'></script>
+        <script type='text/javascript' src='js/sugar.js'></script>
     </head>
-    <body>
-    </script>
+    <body class='metro'>
+		<nav class="navigation-bar light">
+			<nav class="navigation-bar-content container">
+				<a class="brand element">
+					<span class='icon-play on-left-more'></span> WePoke
+				</a>
+				<item class="element-divider">&nbsp;</item>
+				<item class="element place-right">
+					Help <span class='icon-help on-right'></span>
+				</item>
+				<item class="element">
+					<a class='dropdown-toggle' href='#'>
+						<span class='icon-earth'></span> Networking
+					</a>
+					<ul class="dropdown-menu place-right" data-role="dropdown">
+						<li><a href='#!/network/manage'>
+							<span class='icon-cloud'></span> Manage Servers
+						</a></li>
+						<li><a href='#!/network/trade'>
+							<span class='icon-cycle'></span> Auto Trades
+						</a></li>
+						<li><a href='#!/network/toggle'>
+							<span class='icon-blocked'></span> Disable Networking
+						</a></li>
+					</ul>
+				</item>
+				<item class="element">
+					<a class='dropdown-toggle' href='#'>
+						<span class='icon-star'></span> Saves
+					</a>
+					<ul class="dropdown-menu place-right" data-role="dropdown">
+						<li><a href='#!/game/load'>Load</a></li>
+						<li><a href='#!/game/save'>Save</a></li>
+						<li><a href='#!/game/quit'>Quit</a></li>
+					</ul>
+				</item>
+			</nav>
+		</nav>
+		<div class='container'>
+			<div class='grid fluid'>
+				<div class='row'>
+					<div class='span1'>
+						<h1><span class="icon-arrow-left-3 fg-darker smaller"></span></h1>
+					</div>
+					<div class='span11'>
+						<h1>
+							wepoke:
+							<span>activity-description</span>
+						</h1>
+					</div>
+				</div>
+			</div>
+		</div>
+    </body>
 </html>
