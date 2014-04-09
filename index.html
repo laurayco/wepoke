@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <html>
     <head>
@@ -20,66 +20,13 @@
 						null
 				} )();
 		</script>
-		<script type='text/javascript' src='js/state-machine.min.js'></script>
         <script type='text/javascript' src='js/sugar.js'></script>
-        <script type='text/javascript' src='js/ko.js'></script>
-        <script type='text/javascript' src='js/mapping.ko.js'></script>
-        <script type='text/javascript' src='js/utilities.game.js'></script>
-        <script type='text/javascript' src='js/input.game.js'></script>
-        <script type='text/javascript' src='js/game.js'></script>
-        <script type='text/javascript' src='js/main.js'></script>
-        <link rel="stylesheet/less" type="text/css" href="css/style.less" />
-        <script type='text/javascript' src='js/less.js'></script>
-        <link href="img/favicon.ico" rel="icon" type="image/x-icon" />
+        <link href="/img/favicon.ico" rel="icon" type="image/x-icon" />
+        <link href="/css/metro-bootstrap.css" rel="style" type="text/css" />
+        <link href="/css/metro-bootstrap-responsive.css" rel="style" type="text/css" />
         <meta name="viewport" content="initial-scale=1, maximum-scale=1">
         <title>WePoke!</title>
     </head>
-    <body data-bind="attr:{class:currentMode()}">
-		<div id='loadingScreen'>
-			<p>
-				<span>Loading...</span>
-				<div class='spinner'>
-					<div class='line'>&nbsp;</div>
-					<div class='ball'>&nbsp;</div>
-				</div>
-			</p>
-		</div>
-		<div id='explorationScreen'>
-			<canvas width="320" height="240"></canvas>
-		</div>
-		<div id='savingScreen' class='menu'>
-			<div class='verticalPadding'>
-				<h1>Save?</h1>
-				<div class='buttonList horizontal'>
-					<div class='button' data-bind='click:saveGame.bind()'>Save</div>
-					<div class='button' data-bind='click:exploreGame'>Cancel</div>
-				</div>
-			</div>
-		</div>
-		<div id='messagelog'>
-			<ul data-bind='foreach:messageLog'>
-				<li data-bind='
-			</ul>
-		</div>
-		<div id='choosingScreen' class='menu'>
-			<div class='verticalPadding'>
-				<h1>Choose your save.</h1>
-				<div class='buttonList vertical' data-bind='foreach:availableSaves'>
-					<div class='button' data-bind='text:name,click:$root.chooseSave'></div>
-				</div>
-				<div class='buttonList horizontal'>
-					<div class='button' data-bind='click:startNewGame'>New Game</div>
-				</div>
-			</div>
-		</div>
-    </body>
-    <script type='text/javascript'>
-	  config = {
-		gameCanvasQuery:"#explorationScreen > canvas"
-	  };
-      window.gameInterface = knockoutSetup({
-		gameCanvas:document.querySelector(config.gameCanvasQuery)
-      });
-      //less.watch();
+    <body>
     </script>
 </html>
