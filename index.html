@@ -11,8 +11,8 @@
 		<script type='text/javascript' src='js/animation_request_shim.js'></script>
         <script type='text/javascript' src='js/sugar.js'></script>
     </head>
-    <body class='metro'>
-		<nav class="navigation-bar light">
+    <body class='metro' ng-app='WePoke'>
+		<nav class="navigation-bar light" ng-controller='Navigation'>
 			<nav class="navigation-bar-content container">
 				<a class="brand element">
 					<span class='icon-play on-left-more'></span> WePoke
@@ -49,7 +49,7 @@
 				</item>
 			</nav>
 		</nav>
-		<div class='container'>
+		<div class='container' ng-controller='ApplicationControl'>
 			<div class='grid fluid'>
 				<div class='row'>
 					<div class='span1'>
@@ -60,6 +60,12 @@
 							wepoke:
 							<span>activity-description</span>
 						</h1>
+					</div>
+				</div>
+				<div class='activity row'>
+					<div ng-view>
+						<!-- Allow the individual activity's / controllers
+						to have control over the main content area -->
 					</div>
 				</div>
 			</div>
